@@ -145,18 +145,23 @@ def register_owner(request):
             # ---------------------
             elif stay_type == "commercial":
 
-                CommercialFloor.objects.create(
-                    owner=owner,
-                    commercial_property=property_obj,
-                    floorNo=floor_no,
-                    area_sqft=floor_data.get("area")  # ✅ FIXED
-                )
+                sections = floor_data.get("sections", [])
 
+                if not sections:
+                    continue
+
+                for section in sections:
+                    CommercialFloor.objects.create(
+                        owner=owner,
+                        commercial_property=property_obj,
+                        floorNo=floor_no,
+                        sectionNo=section.get("sectionNo"),
+                        area_sqft=section.get("area")
+                    )
     return Response(
         {"message": "Owner Registered Successfully"},
         status=status.HTTP_201_CREATED
     )
-
 
 @api_view(['POST'])
 def register_tenent(request):

@@ -160,7 +160,9 @@ class CommercialSqftSerializer(serializers.ModelSerializer):
             'owner',
             'commercial_property',
             'floorNo',
-            'squareFeet'
+            'sectionNo',
+            'area_sqft'
+            # 'squareFeet'
         ]
         extra_kwargs = {
             'owner': {'write_only': True},

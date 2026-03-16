@@ -182,6 +182,7 @@ class ApartmentFloorUnit(models.Model):
 
 # ------------------ COMMERCIAL FLOORS ------------------
 class CommercialFloor(models.Model):
+
     owner = models.ForeignKey(
         Owners,
         on_delete=models.CASCADE,
@@ -195,11 +196,16 @@ class CommercialFloor(models.Model):
     )
 
     floorNo = models.PositiveIntegerField()
+
+    sectionNo = models.PositiveIntegerField(null=True, blank=True)
+
     area_sqft = models.PositiveIntegerField(null=True, blank=True)
 
-    def __str__(self):
-        return f"{self.commercial_property.commercialName} - Floor {self.floorNo} ({self.area_sqft} sqft)"
+    class Meta:
+        ordering = ["floorNo", "sectionNo"]
 
+    def __str__(self):
+        return f"{self.commercial_property.commercialName} - Floor {self.floorNo} Section {self.sectionNo}"
 
 
 class Tenent(models.Model):
