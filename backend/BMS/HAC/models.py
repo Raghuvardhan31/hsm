@@ -44,6 +44,7 @@ class StayHostelDetails(models.Model):
     facilities = models.JSONField(blank=True, null=True)
     owner_ship_proof = models.FileField(upload_to='identity_proofs/', blank=True, null=True)
     owner_property_photos = models.FileField(upload_to='identity_proofs/', blank=True, null=True)
+    gallery_images = models.JSONField(blank=True, null=True) #New
 
     def __str__(self):
         return self.hostelName or "Hostel"
@@ -76,6 +77,7 @@ class ApartmentStayDetails(models.Model):
     facilities = models.JSONField(blank=True, null=True)
     owner_ship_proof = models.FileField(upload_to='identity_proofs/', blank=True, null=True)
     owner_property_photos = models.FileField(upload_to='identity_proofs/', blank=True, null=True)
+    gallery_images = models.JSONField(blank=True, null=True) #New
 
     def __str__(self):
         return f"{self.apartmentName} - {self.bhk}"
@@ -101,6 +103,7 @@ class CommericialDetails(models.Model):
     facilities = models.JSONField(blank=True, null=True)
     owner_ship_proof = models.FileField(upload_to='identity_proofs/', blank=True, null=True)
     owner_property_photos = models.FileField(upload_to='identity_proofs/', blank=True, null=True)
+    gallery_images = models.JSONField(blank=True, null=True) #New
 
     def __str__(self):
         return self.commercialName or "Commercial Property"

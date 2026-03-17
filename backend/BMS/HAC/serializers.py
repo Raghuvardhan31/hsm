@@ -61,7 +61,8 @@ class HostelSerializer(serializers.ModelSerializer):
             'hostelType',
             'facilities',
             'owner_ship_proof',
-            'owner_property_photos'
+            'owner_property_photos',
+            'gallery_images' 
         ]
 
 
@@ -101,7 +102,8 @@ class ApartmentSerializer(serializers.ModelSerializer):
             'tenantType',
             'facilities',
             'owner_ship_proof',
-            'owner_property_photos'
+            'owner_property_photos',
+            'gallery_images'
         ]
         extra_kwargs = {
             'owner': {'write_only': True}
@@ -144,7 +146,7 @@ class CommercialSerializer(serializers.ModelSerializer):
             'facilities',
             'owner_ship_proof',
             'owner_property_photos',
-            # add other fields as needed
+            'gallery_images'  
         ]
         extra_kwargs = {'owner': {'write_only': True}}
 

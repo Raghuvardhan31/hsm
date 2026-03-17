@@ -838,23 +838,39 @@ export default function OwnerRegistrationScreen() {
       }
 
       // property photo
+      // if (
+      //   Array.isArray(form.documents?.homePics) &&
+      //   form.documents.homePics.length > 0
+      // ) {
+      //   const firstPic = form.documents.homePics[0];
+
+      //   if (firstPic?.uri) {
+      //     formData.append("owner_property_photos", {
+      //       uri: firstPic.uri,
+      //       name: firstPic.name || "property-photo",
+      //       type: firstPic.mimeType || "image/jpeg",
+      //     });
+      //   }
+      // }
+
+      // ⭐ SEND MULTIPLE GALLERY IMAGES
       if (
         Array.isArray(form.documents?.homePics) &&
         form.documents.homePics.length > 0
       ) {
-        const firstPic = form.documents.homePics[0];
-
-        if (firstPic?.uri) {
-          formData.append("owner_property_photos", {
-            uri: firstPic.uri,
-            name: firstPic.name || "property-photo",
-            type: firstPic.mimeType || "image/jpeg",
-          });
-        }
+        form.documents.homePics.forEach((img, index) => {
+          if (img?.uri) {
+            formData.append("gallery_images", {
+              uri: img.uri,
+              name: img.name || `gallery_${index}.jpg`,
+              type: img.mimeType || "image/jpeg",
+            });
+          }
+        });
       }
 
       const response = await fetch(
-        "http://192.168.1.44:8000/register/owner/",
+        "http://192.168.1.23:8000/api/owner/",
         {
           method: "POST",
           body: formData,

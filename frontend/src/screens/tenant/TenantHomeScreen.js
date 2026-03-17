@@ -39,6 +39,36 @@ import COLORS from "../../theme/colors";
 
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = width - 40;
+const offers = [
+  {
+    id: "1",
+    title: "20% Off",
+    desc: "On first booking",
+    color: "#6C63FF",
+    icon: "pricetag-outline",
+  },
+  {
+    id: "2",
+    title: "Free Visit",
+    desc: "Schedule today",
+    color: "#00C897",
+    icon: "home-outline",
+  },
+  {
+    id: "3",
+    title: "No Brokerage",
+    desc: "Direct owner deals",
+    color: "#FF7A00",
+    icon: "cash-outline",
+  },
+];
+
+const categories = [
+  { id: "1", name: "All", icon: "grid-outline" },
+  { id: "2", name: "Hostel", icon: "bed-outline" },
+  { id: "3", name: "Apartment", icon: "business-outline" },
+  { id: "4", name: "Commercial", icon: "briefcase-outline" },
+];
 
 export default function TenantHomeScreen() {
   // FILTER STATES
@@ -56,41 +86,111 @@ export default function TenantHomeScreen() {
   // const [selectedGalleryIndex, setSelectedGalleryIndex] = useState(null);
 
   // --- Data ---
-  const fetchProperties = async () => {
+//   const fetchProperties = async () => {
+//   try {
+
+//     // console.log("Fetching from:", "http://192.168.1.23:8000/owner/owner_props/");
+
+//     const response = await fetch("http://15.206.92.230:8000/api/owner_props/");
+//     const result = await response.json();
+
+//     console.log("API RESPONSE:", result);
+
+//     const formattedData = result.data.map((item) => ({
+//       id: String(item.id),
+
+//       type: item.type || "Property",
+
+//       hostelType: item.hostelType || "N/A",
+//       allowedTenants: item.allowedTenants || "Anyone",
+
+//       name: item.name || "Unnamed Property",
+//       address: item.address || "No Address",
+//       contact: item.contact || "No Contact",
+
+//       latitude: item.latitude || 17.385044,
+//       longitude: item.longitude || 78.486671,
+
+//       image: item.image || "https://via.placeholder.com/400",
+
+//       rating: item.rating || 4.5,
+//       isAvailable: item.isAvailable ?? true,
+
+//       facilities: item.facilities || [],
+//     //   // ⭐ ADDED FOR GALLERY
+//     //   galleryImages: item.gallery || [],
+//     // }));
+
+//     // ⭐ FIXED GALLERY
+//       galleryImages: item.gallery
+//         ? item.gallery.map((img) => MEDIA_URL + img)
+//         : [],
+//     }));
+
+//     console.log("FORMATTED DATA:", formattedData);
+
+//     setAllProperties(formattedData);
+
+//   } catch (error) {
+//     console.log("Fetch Properties Error:", error);
+//   }
+// };
+const fetchProperties = async () => {
   try {
-
-    console.log("Fetching from:", "http://192.168.1.23:8000/owner/owner_props/");
-
-    const response = await fetch("http://192.168.1.23:8000/owner/owner_props/");
+    const response = await fetch("http://192.168.1.23:8000/api/owner_props/");
     const result = await response.json();
 
     console.log("API RESPONSE:", result);
 
-    const formattedData = result.data.map((item) => ({
-      id: String(item.id),
+    const BASE_URL = "http://192.168.1.23:8000/media/";
 
-      type: item.type || "Property",
+    const formattedData = result.data.map((item) => {
+      // ✅ MAIN IMAGE FIX
+      let mainImage = item.image
+        ? item.image.startsWith("http")
+          ? item.image
+          : BASE_URL + item.image
+        : null;
 
-      hostelType: item.hostelType || "N/A",
-      allowedTenants: item.allowedTenants || "Anyone",
+      // ✅ GALLERY FIX (MULTIPLE IMAGES)
+      let galleryImages = item.gallery
+        ? item.gallery.map((img) =>
+            img.startsWith("http") ? img : BASE_URL + img
+          )
+        : [];
 
-      name: item.name || "Unnamed Property",
-      address: item.address || "No Address",
-      contact: item.contact || "No Contact",
+      // ✅ If no main image → take first gallery image
+      if (!mainImage && galleryImages.length > 0) {
+        mainImage = galleryImages[0];
+      }
 
-      latitude: item.latitude || 17.385044,
-      longitude: item.longitude || 78.486671,
+      return {
+        id: String(item.id),
+        type: item.type || "Property",
 
-      image: item.image || "https://via.placeholder.com/400",
+        hostelType: item.hostelType || "N/A",
+        allowedTenants: item.allowedTenants || "Anyone",
 
-      rating: item.rating || 4.5,
-      isAvailable: item.isAvailable ?? true,
+        name: item.name || "Unnamed Property",
+        address: item.address || "No Address",
+        contact: item.contact || "No Contact",
 
-      facilities: item.facilities || [],
-    }));
+        latitude: item.latitude || 17.385044,
+        longitude: item.longitude || 78.486671,
+
+        image: mainImage || "https://via.placeholder.com/400",
+
+        rating: item.rating || 4.5,
+        isAvailable: item.isAvailable ?? true,
+
+        facilities: item.facilities || [],
+
+        // ⭐ FINAL FIELD
+        galleryImages: galleryImages,
+      };
+    });
 
     console.log("FORMATTED DATA:", formattedData);
-
     setAllProperties(formattedData);
 
   } catch (error) {
@@ -98,134 +198,7 @@ export default function TenantHomeScreen() {
   }
 };
 
-  // const allProperties = [
-  //   {
-  //     id: "1",
-  //     type: "Hostel",
-  //     hostelType: "Boys",
-  //     name: "Sai Residency",
-  //     address: "MG Road, Hyderabad",
-  //     contact: "+919876543210",
-  //     latitude: 17.385044,
-  //     longitude: 78.486671,
-  //     // Reliable Hostel Link
-  //     image:
-  //       "https://images.unsplash.com/photo-1595526114035-0d45ed16cfbf?auto=format&fit=crop&w=800&q=80",
-  //     isAvailable: true,
-  //     rating: 4.5,
-  //     facilities: ["WiFi", "Food", "AC", "Laundry", "Security"],
-  //   },
-  //   {
-  //     id: "2",
-  //     type: "Apartment",
-  //     name: "Green Apartments",
-  //     address: "Gachibowli, Hyderabad",
-  //     contact: "+919988766554",
-  //     latitude: 17.4426,
-  //     longitude: 78.3772,
-  //     image:
-  //       "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=800&q=80",
-  //     isAvailable: true,
-  //     rating: 4.2,
-  //     facilities: ["Parking", "Lift", "Gym", "Power Backup", "Balcony"],
-  //     allowedTenants: "FamilyOnly",
-  //   },
-  //   {
-  //     id: "3",
-  //     type: "Commercial",
-  //     name: "Bandra Business Center",
-  //     address: "Bandra East, Mumbai",
-  //     contact: "+919123433333",
-  //     latitude: 19.0596,
-  //     longitude: 72.8295,
-  //     image:
-  //       "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80",
-  //     isAvailable: true,
-  //     rating: 4.8,
-  //     facilities: ["Conference Room", "Security", "AC", "Reception", "CCTV"],
-  //   },
-  //   {
-  //     id: "4",
-  //     type: "Hostel",
-  //     hostelType: "Girls",
-  //     name: "Delhi Residency",
-  //     address: "Connaught Place, Delhi",
-  //     contact: "+919988744444",
-  //     latitude: 28.6315,
-  //     longitude: 77.2167,
-  //     // Reliable Girls Hostel/Room Link
-  //     image:
-  //       "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&w=800&q=80",
-  //     isAvailable: true,
-  //     rating: 3.9,
-  //     facilities: ["WiFi", "Laundry", "Food", "24/7 Security"],
-  //   },
-  //   {
-  //     id: "5",
-  //     type: "Apartment",
-  //     name: "Tech View Apartments",
-  //     address: "Electronic City, Bangalore",
-  //     contact: "+919876588888",
-  //     latitude: 12.8456,
-  //     longitude: 77.6603,
-  //     image:
-  //       "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=800&q=80",
-  //     isAvailable: true,
-  //     rating: 4.4,
-  //     facilities: ["Security", "Power Backup", "Parking", "Lift", "Gym"],
-  //     allowedTenants: "FamilyAndBachelor",
-  //   },
-  //   {
-  //     id: "6",
-  //     type: "Commercial",
-  //     name: "Chennai Business Center",
-  //     address: "T Nagar, Chennai",
-  //     contact: "+919123422233",
-  //     latitude: 13.0418,
-  //     longitude: 80.2341,
-  //     image:
-  //       "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=800&q=80",
-  //     isAvailable: true,
-  //     rating: 4.1,
-  //     facilities: [
-  //       "Parking",
-  //       "Central AC",
-  //       "Conference Room",
-  //       "CCTV",
-  //       "Reception",
-  //     ],
-  //   },
-  // ];
-  const categories = [
-    { id: "1", name: "All", icon: "grid-outline" },
-    { id: "2", name: "Hostel", icon: "bed-outline" },
-    { id: "3", name: "Apartment", icon: "home-outline" },
-    { id: "4", name: "Commercial", icon: "business-outline" },
-  ];
 
-  const offers = [
-    {
-      id: 1,
-      title: "Limited Offer!",
-      desc: "Get 20% off on your first month",
-      color: COLORS.PRIMARY,
-      icon: "gift-outline",
-    },
-    {
-      id: 2,
-      title: "Refer & Earn",
-      desc: "Get ₹500 for every successful referral",
-      color: "#764ba2",
-      icon: "people-outline",
-    },
-    {
-      id: 3,
-      title: "New Listing",
-      desc: "Premium PGs available in Gachibowli",
-      color: "#2d3436",
-      icon: "flash-outline",
-    },
-  ];
 
   const [locationName, setLocationName] = useState("Fetching location...");
   const [isModalVisible, setModalVisible] = useState(false);
@@ -456,7 +429,7 @@ export default function TenantHomeScreen() {
             >
               {offers.map((offer) => (
                 <View
-                  key={offer.id}
+                  key={`${offer.id}-${offer.title}`}
                   style={[
                     homeStyles.promoCard,
                     { backgroundColor: offer.color },
@@ -486,7 +459,7 @@ export default function TenantHomeScreen() {
             >
               {categories.map((cat) => (
                 <TouchableOpacity
-                  key={cat.id}
+                  key={`${cat.id}-${cat.name}`}
                   onPress={() => setSelectedType(cat.name)}
                   style={homeStyles.categoryItem}
                 >
@@ -529,17 +502,18 @@ export default function TenantHomeScreen() {
           </View>
 
           {filteredProperties.map((item) => (
-            <TouchableOpacity
-              key={item.id}
-              activeOpacity={0.9}
-              onPress={() => handlePress(item)}
-            >
-              <View style={homeStyles.card}>
-                <Image
-                  source={{ uri: item.image }}
-                  style={homeStyles.cardImg}
-                  resizeMode="cover"
-                />
+          <TouchableOpacity
+            key={`${item.id}-${item.type}`}
+            activeOpacity={0.9}
+            onPress={() => handlePress(item)}
+          >
+            <View style={homeStyles.card}>
+              <Image
+                source={{ uri: item.galleryImages?.[0] || item.image }}
+                style={homeStyles.cardImg}
+                resizeMode="cover"
+                onError={() => console.log("Card image failed:", item.image)}
+              />
                 <View style={homeStyles.ratingTag}>
                   <Ionicons name="star" size={12} color="#FFD700" />
                   <Text style={homeStyles.ratingText}>{item.rating}</Text>
@@ -839,11 +813,13 @@ function PropertyDetailsScreen({ property, onBack }) {
   const [userRating, setUserRating] = useState(5);
   const [userComment, setUserComment] = useState("");
 
-  const galleryImages = [
-    "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2",
-    "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688",
-    "https://images.unsplash.com/photo-1560184897-ae75f418493e",
-  ];
+ const galleryImages =
+  property.galleryImages && property.galleryImages.length > 0
+    ? property.galleryImages
+    : property.image
+    ? [property.image]
+    : ["https://via.placeholder.com/400"];
+
   // Add this near your other useState hooks
   const [selectedGalleryIndex, setSelectedGalleryIndex] = useState(null);
 
@@ -866,16 +842,6 @@ function PropertyDetailsScreen({ property, onBack }) {
     "Central AC": "air-conditioner",
   };
 
-  const ruleIcons = {
-    "No Smoking": "smoking-off",
-    "No Pets": "paw-off",
-    "No Parties": "party-popper", // or "account-group-outline"
-    "Visitors Allowed": "account-multiple-check",
-    "Quiet Hours": "volume-off",
-    "Late Entry": "clock-outline",
-    "Security Deposit": "cash-lock",
-    "Notice Period": "calendar-clock",
-  };
 
   const reviews = [
     {
@@ -1077,28 +1043,38 @@ fetch("https://your-api.com/bookings", {
         return;
       }
 
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images, // ✅ Safe for SDK 54
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 0.3,
-      });
+     const result = await ImagePicker.launchImageLibraryAsync({
+  mediaTypes: ImagePicker.MediaTypeOptions.All,
+  allowsEditing: false,
+  quality: 1,
+});
 
       if (!result.canceled && result.assets?.length > 0) {
-        const uri = result.assets[0].uri;
+  const uri = result.assets[0].uri;
 
-        const fileInfo = await FileSystem.getInfoAsync(uri);
-        const sizeInKb = fileInfo.size / 1024;
+  // Get file name
+  const fileName = uri.split("/").pop();
+  const extension = fileName.split(".").pop().toLowerCase();
 
-        console.log("Image size:", sizeInKb);
+  // Check file type
+  if (!["jpg", "jpeg", "pdf"].includes(extension)) {
+    alert("Only JPG, JPEG or PDF files are allowed");
+    return;
+  }
 
-        if (sizeInKb > 500) {
-          alert("Image must be under 500KB");
-          return;
-        }
+  // Check file size
+  const fileInfo = await FileSystem.getInfoAsync(uri);
+  const sizeInKb = fileInfo.size / 1024;
 
-        setReviewImage(uri);
-      }
+  console.log("File size:", sizeInKb);
+
+  if (sizeInKb > 100) {
+    alert("File must be under 100KB");
+    return;
+  }
+
+  setReviewImage(uri);
+}
     } catch (error) {
       console.log("Image Picker Error:", error);
       alert("Something went wrong while picking image.");
@@ -1126,7 +1102,11 @@ fetch("https://your-api.com/bookings", {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 140 }}
       >
-        <Image source={{ uri: property.image }} style={styles.mainImage} />
+        <Image
+            source={{ uri: property.image }}
+            style={styles.mainImage}
+            onError={() => console.log("Main image failed:", property.image)}
+          />
 
         <View style={styles.content}>
           <View style={styles.row}>
@@ -1141,113 +1121,25 @@ fetch("https://your-api.com/bookings", {
           <Text style={styles.typeText}>
             {property.type} • ⭐ 4.8 (120 reviews)
           </Text>
-
-          {/* --- PROMOTIONAL OFFERS --- */}
-          {/* --- PREMIUM OFFERS SECTION --- */}
-          {/* <View style={{ marginTop: 25 }}>
-            <View style={styles.promoHeader}>
-              <Text style={styles.sectionTitlePromo}>Available Offers</Text>
-              <TouchableOpacity onPress={() => alert("All coupons visible")}>
-                <Text style={styles.seeAllText}>View All</Text>
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{
-                paddingLeft: 20,
-                paddingRight: 10,
-                paddingVertical: 5,
-              }}
-            >
-              {promotionalOffers.map((offer) => (
-                <View key={offer.id} style={styles.premiumOfferCard}>
-                  {/* Left Color Accent Bar */}
-          {/* <View
-                    style={[
-                      styles.colorAccent,
-                      {
-                        backgroundColor: offer.colors
-                          ? offer.colors[0]
-                          : offer.color,
-                      },
-                    ]}
-                  />
-
-                  <View style={styles.offerInnerContent}>
-                    <View style={styles.offerMainRow}>
-                      <View
-                        style={[
-                          styles.iconBox,
-                          {
-                            backgroundColor:
-                              (offer.colors ? offer.colors[0] : offer.color) +
-                              "15",
-                          },
-                        ]}
-                      >
-                        <MaterialCommunityIcons
-                          name={offer.icon}
-                          size={22}
-                          color={offer.colors ? offer.colors[0] : offer.color}
-                        />
-                      </View>
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.offerTitleText}>{offer.title}</Text>
-                        <Text style={styles.offerSubtitleText}>
-                          {offer.desc}
-                        </Text>
-                      </View>
-                    </View>
-
-                    <View style={styles.offerSeparator} />
-
-                    <View style={styles.offerBottomRow}>
-                      <View style={styles.couponPill}>
-                        <Text style={styles.couponPillText}>
-                          {offer.code || "NO CODE"}
-                        </Text>
-                      </View>
-                      <TouchableOpacity
-                        style={[
-                          styles.applyOfferBtn,
-                          {
-                            backgroundColor: offer.colors
-                              ? offer.colors[0]
-                              : offer.color,
-                          },
-                        ]}
-                        onPress={() => alert(`Applied: ${offer.code}`)}
-                      >
-                        <Text style={styles.applyOfferText}>APPLY</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                </View>
-              ))}
-            </ScrollView>
-          </View> */}
-
-          <Text style={styles.sectionTitle}>About this place</Text>
-          <Text style={styles.descriptionText}>
-            This premium {property.type.toLowerCase()} offers a comfortable stay
-            with all modern utilities. Located in a prime area with easy access
-            to public transport and local markets.
-          </Text>
-
+          
           <Text style={styles.sectionTitle}>Facilities</Text>
+
           <View style={styles.amenitiesGrid}>
-            {property.facilities?.map((facility) => (
-              <View key={facility} style={styles.amenityItem}>
-                <MaterialCommunityIcons
-                  name={facilityIcons[facility] || "check-circle"}
-                  size={22}
-                  color={COLORS.PRIMARY}
-                />
-                <Text style={styles.amenityLabel}>{facility}</Text>
-              </View>
-            ))}
+            {property.facilities?.map((facility, index) => {
+              const formatted =
+                facility.charAt(0).toUpperCase() + facility.slice(1);
+
+              return (
+                <View key={`${facility}-${index}`} style={styles.amenityItem}>
+                  <MaterialCommunityIcons
+                    name={facilityIcons[formatted] || "check-circle"}
+                    size={22}
+                    color={COLORS.PRIMARY}
+                  />
+                  <Text style={styles.amenityLabel}>{formatted}</Text>
+                </View>
+              );
+            })}
           </View>
 
           {/* User Reviews Section */}
@@ -1273,7 +1165,7 @@ fetch("https://your-api.com/bookings", {
             style={styles.reviewScroll}
           >
             {reviews.map((item) => (
-              <View key={item.id} style={styles.reviewCard}>
+              <View key={`${item.id}-${item.type}`} style={styles.reviewCard}>
                 <View style={styles.row}>
                   <Text style={styles.reviewUser}>{item.user}</Text>
                   <View style={styles.starBadge}>
@@ -1361,36 +1253,22 @@ fetch("https://your-api.com/bookings", {
           >
             {galleryImages.map((img, index) => (
               <TouchableOpacity
-                key={index}
+                key={`${img}-${index}`}
                 onPress={() => {
                   setViewerIndex(index);
                   setSelectedGalleryIndex(index);
                 }}
               >
-                <Image source={{ uri: img }} style={styles.galleryImage} />
+                
+                <Image
+                    source={{ uri: img }}
+                  style={styles.galleryImage}
+                  onError={() => console.log("Gallery image failed:", img)}
+                />
               </TouchableOpacity>
             ))}
           </ScrollView>
 
-          <Text style={styles.sectionTitle}>Property Rules & Policy</Text>
-          <View style={styles.rulesContainer}>
-            {property.rules?.map((rule, index) => (
-              <View key={index} style={styles.ruleRow}>
-                <View style={styles.ruleIconCircle}>
-                  <MaterialCommunityIcons
-                    name={ruleIcons[rule] || "information-outline"}
-                    size={18}
-                    color={rule.includes("No") ? COLORS.ERROR : COLORS.PRIMARY}
-                  />
-                </View>
-                <Text style={styles.ruleText}>{rule}</Text>
-              </View>
-            )) || (
-              <Text style={styles.descriptionText}>
-                No specific rules listed.
-              </Text>
-            )}
-          </View>
         </View>
       </ScrollView>
 
@@ -1450,7 +1328,7 @@ fetch("https://your-api.com/bookings", {
                 { textAlign: "left", marginBottom: 5 },
               ]}
             >
-              Add a photo (Max 10KB)
+              Add file (JPG / JPEG / PDF • Max 100KB)
             </Text>
             <View style={styles.uploadContainer}>
               <TouchableOpacity
@@ -1711,43 +1589,48 @@ fetch("https://your-api.com/bookings", {
       </View>
       {/* --- FULL SCREEN IMAGE MODAL --- */}
       {/* --- FULL SCREEN IMAGE MODAL WITH PINCH ZOOM --- */}
-      <Modal
-        visible={selectedGalleryIndex !== null}
-        transparent={true}
-        onRequestClose={() => setSelectedGalleryIndex(null)}
-      >
-        <View style={{ flex: 1 }}>
-          {/* CLOSE BUTTON */}
-          <TouchableOpacity
-            style={{
-              position: "absolute",
-              top: 50,
-              right: 20,
-              zIndex: 10,
-              backgroundColor: "rgba(0,0,0,0.6)",
-              padding: 8,
-              borderRadius: 20,
-            }}
-            onPress={() => setSelectedGalleryIndex(null)}
-          >
-            <Ionicons name="close" size={28} color="#fff" />
-          </TouchableOpacity>
+      {/* --- FULL SCREEN IMAGE MODAL WITH PINCH ZOOM --- */}
+   
+<Modal
+  visible={selectedGalleryIndex !== null}
+  transparent={true}
+  onRequestClose={() => setSelectedGalleryIndex(null)}
+>
+  <View style={{ flex: 1 }}>
 
-          <ImageViewer
-            imageUrls={zoomImages}
-            index={viewerIndex}
-            enableSwipeDown
-            resetImageByChange={true}
-            onChange={(index) => setViewerIndex(index)}
-            onSwipeDown={() => setSelectedGalleryIndex(null)}
-            saveToLocalByLongPress={false}
-          />
-        </View>
-      </Modal>
-    </View>
-  );
+    {/* CLOSE BUTTON */}
+    <TouchableOpacity
+      style={{
+        position: "absolute",
+        top: 50,
+        right: 20,
+        zIndex: 10,
+        backgroundColor: "rgba(0,0,0,0.6)",
+        padding: 8,
+        borderRadius: 20,
+      }}
+      onPress={() => setSelectedGalleryIndex(null)}
+    >
+      <Ionicons name="close" size={28} color="#fff" />
+    </TouchableOpacity>
+
+    {/* IMAGE VIEWER */}
+    <ImageViewer
+      imageUrls={zoomImages}
+      index={viewerIndex}
+      enableSwipeDown
+      resetImageByChange={true}
+      onChange={(index) => setViewerIndex(index)}
+      onSwipeDown={() => setSelectedGalleryIndex(null)}
+      saveToLocalByLongPress={false}
+    />
+
+  </View>
+</Modal>
+
+</View>
+);
 }
-
 const isWeb = Platform.OS === "web";
 
 const homeStyles = StyleSheet.create({

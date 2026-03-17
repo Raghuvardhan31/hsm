@@ -454,6 +454,7 @@ def get_properties_listing(request):
             "latitude": None,   # not available in model
             "longitude": None,  # not available in model
             "image": request.build_absolute_uri(hostel.owner_property_photos.url) if hostel.owner_property_photos else None,
+            "gallery": hostel.gallery_images if hostel.gallery_images else [], #New
             "isAvailable": True,   # default for now
             "rating": None,        # not available in model
             "facilities": hostel.facilities if hostel.facilities else [],
@@ -477,6 +478,7 @@ def get_properties_listing(request):
             "latitude": None,   # not available in model
             "longitude": None,  # not available in model
             "image": request.build_absolute_uri(apartment.owner_property_photos.url) if apartment.owner_property_photos else None,
+            "gallery": apartment.gallery_images if apartment.gallery_images else [],  # ⭐ ADD THIS
             "isAvailable": True,   # default for now
             "rating": None,        # not available in model
             "facilities": apartment.facilities if apartment.facilities else [],
@@ -495,6 +497,7 @@ def get_properties_listing(request):
             "latitude": None,   # not available in model
             "longitude": None,  # not available in model
             "image": request.build_absolute_uri(commercial.owner_property_photos.url) if commercial.owner_property_photos else None,
+            "gallery": commercial.gallery_images if commercial.gallery_images else [],  # ⭐ ADD THIS          
             "isAvailable": True,   # default for now
             "rating": None,        # not available in model
             "facilities": commercial.facilities if commercial.facilities else [],

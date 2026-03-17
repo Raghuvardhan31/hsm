@@ -1,0 +1,43 @@
+# ----------------------
+# Python / Django
+# ----------------------
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual Environment (IMPORTANT)
+backend/demo/
+env/
+venv/
+
+# Django specific
+*.log
+db.sqlite3
+media/
+
+# ----------------------
+# Node / React Native
+# ----------------------
+frontend/node_modules/
+node_modules/
+
+# ----------------------
+# OS files
+# ----------------------
+.DS_Store
+Thumbs.db
+
+# ----------------------
+# VS Code
+# ----------------------
+.vscode/
+
+# ----------------------
+# SQL / Session files
+# ----------------------
+*.sql
+*.session.sql
+
+# Specifically your file
+intern_otms_postgres.session.sql
