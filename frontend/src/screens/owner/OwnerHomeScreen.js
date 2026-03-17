@@ -137,7 +137,7 @@ const bedsData =
   useEffect(() => {
   if (!email) return;
 
-  fetch(`http://35.154.25.2:8000/api/details/${encodeURIComponent(email)}/`)
+  fetch(`http://192.168.1.37:8000/api/details/${encodeURIComponent(email)}/`)
     .then((res) => res.json())
     .then((data) => {
       console.log("API Response:", data);
