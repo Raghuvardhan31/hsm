@@ -57,7 +57,7 @@ export default function OwnerLoginScreen({ navigation }) {
 
     try {
 
-      const response = await fetch("http://192.168.1.44:8000/owner/verify/", {
+      const response = await fetch("http://192.168.1.37:8000/api/verify/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

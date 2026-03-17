@@ -2,10 +2,22 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from django.db import transaction
+from django.core.files.storage import default_storage
+from django.conf import settings
 import json
-from .models import *
-from .serializers import *
-from .models import HostelFloorRoom, ApartmentFloorUnit, CommercialFloor,Tenent
+
+from .models import (
+    Owners,
+    StayHostelDetails,
+    ApartmentStayDetails,
+    CommericialDetails,
+    HostelFloorRoom,
+    ApartmentFloorUnit,
+    CommercialFloor,
+    Tenent,
+    TenantBeds
+)
+
 from .serializers import (
     OwnerRegistrationSerializer,
     HostelSerializer,
@@ -14,123 +26,119 @@ from .serializers import (
     BankSerializer,
     TenentSerializer,
     TenantLoginSerializer,
-    OwnerLoginSerializer
+    OwnerLoginSerializer,
+    TenantSerializer
 )
 
 
 @api_view(['POST'])
 @transaction.atomic
 def register_owner(request):
-
     print("Request Data:", request.data)
     print("Request Files:", request.FILES)
 
     stay_type = request.data.get("stayType")
 
-    # ============================
+    if stay_type not in ["hostel", "apartment", "commercial"]:
+        return Response({"error": "Invalid stayType"}, status=status.HTTP_400_BAD_REQUEST)
+
     # 1️⃣ OWNER
-    # ============================
     owner_serializer = OwnerRegistrationSerializer(data=request.data)
-
     if not owner_serializer.is_valid():
-        return Response(owner_serializer.errors, status=400)
+        transaction.set_rollback(True)
+        return Response(owner_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    owner = owner_serializer.save()
+    owner = owner_serializer.save(status='pending')
 
-    # ============================
-    # 2️⃣ PROPERTY
-    # ============================
-    property_obj = None
+    # 2️⃣ FACILITIES
     FACILITY_FIELDS = [
-    "wifi",
-    "parking",
-    "lift",
-    "power_backup",
-    "security",
-    "play_area",
-    "mess",
-    "laundry",
-    "water",
-    "ac",
-    "non_ac",
-]
+        "wifi",
+        "parking",
+        "food",
+        "lift",
+        "power_backup",
+        "security",
+        "play_area",
+        "mess",
+        "laundry",
+        "water",
+        "ac",
+        "non_ac",
+    ]
 
     facilities = [
-    field for field in FACILITY_FIELDS
-    if str(request.data.get(field)).lower() == "true"
-]
-    # property_data = request.data.copy()
+        field for field in FACILITY_FIELDS
+        if str(request.data.get(field)).lower() == "true"
+    ]
+
+    # 3️⃣ SAVE MULTIPLE GALLERY IMAGES
+    uploaded_gallery_files = request.FILES.getlist("gallery_images")
+    gallery_file_paths = []
+
+    for file in uploaded_gallery_files:
+        saved_path = default_storage.save(f"property_gallery/{file.name}", file)
+        gallery_file_paths.append(saved_path)
+
+    # 4️⃣ PROPERTY DATA
     property_data = request.data.dict()
-    property_data.pop('facilities', None)
-    property_data['owner'] = owner.id
-    property_data['facilities'] = facilities
-    
+    property_data.pop("facilities", None)
+    property_data.pop("gallery_images", None)
+
+    property_data["owner"] = owner.id
+    property_data["facilities"] = facilities
+    property_data["gallery_images"] = gallery_file_paths
 
     if stay_type == "hostel":
         serializer = HostelSerializer(data=property_data)
-
     elif stay_type == "apartment":
         serializer = ApartmentSerializer(data=property_data)
-
-    elif stay_type == "commercial":
+    else:
         serializer = CommercialSerializer(data=property_data)
 
-    else:
-        return Response({"error": "Invalid stayType"}, status=400)
-
     if not serializer.is_valid():
-        return Response(serializer.errors, status=400)
+        transaction.set_rollback(True)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     property_obj = serializer.save()
 
-    # ============================
-    # 3️⃣ BANK
-    # ============================
+    # 5️⃣ BANK
     bank_data = request.data.copy()
-    bank_data['owner'] = owner.id
+    bank_data["owner"] = owner.id
 
     bank_serializer = BankSerializer(data=bank_data)
-
     if not bank_serializer.is_valid():
-        return Response(bank_serializer.errors, status=400)
+        transaction.set_rollback(True)
+        return Response(bank_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     bank_serializer.save()
 
-    # ============================
-    # 4️⃣ FLOORS
-    # ============================
+    # 6️⃣ FLOORS
     building_layout = request.data.get("building_layout")
 
     if building_layout:
+        try:
+            layout = json.loads(building_layout)
+        except json.JSONDecodeError:
+            transaction.set_rollback(True)
+            return Response(
+                {"error": "Invalid building_layout JSON"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
-        layout = json.loads(building_layout)   # ⭐ IMPORTANT
-        # floors = layout.get("floors", [])
-        floors = layout
-
-        for floor_data in floors:
-
+        for floor_data in layout:
             floor_no = floor_data.get("floorNo")
 
-            # ---------------------
-            # HOSTEL
-            # ---------------------
             if stay_type == "hostel":
-
                 for room in floor_data.get("rooms", []):
                     HostelFloorRoom.objects.create(
                         owner=owner,
                         hostel=property_obj,
                         floor=floor_no,
                         roomNo=room.get("roomNo"),
-                        # sharing=room.get("sharing")
                         sharing=room.get("beds")
                     )
 
-            # ---------------------
-            # APARTMENT
-            # ---------------------
             elif stay_type == "apartment":
-
                 for flat in floor_data.get("flats", []):
                     ApartmentFloorUnit.objects.create(
                         owner=owner,
@@ -140,17 +148,8 @@ def register_owner(request):
                         bhk=flat.get("bhk")
                     )
 
-            # ---------------------
-            # COMMERCIAL (FIXED ⭐)
-            # ---------------------
             elif stay_type == "commercial":
-
-                sections = floor_data.get("sections", [])
-
-                if not sections:
-                    continue
-
-                for section in sections:
+                for section in floor_data.get("sections", []):
                     CommercialFloor.objects.create(
                         owner=owner,
                         commercial_property=property_obj,
@@ -158,10 +157,15 @@ def register_owner(request):
                         sectionNo=section.get("sectionNo"),
                         area_sqft=section.get("area")
                     )
+
     return Response(
-        {"message": "Owner Registered Successfully"},
+        {
+            "message": "Owner Registered Successfully",
+            "gallery_images": gallery_file_paths
+        },
         status=status.HTTP_201_CREATED
     )
+
 
 @api_view(['POST'])
 def register_tenent(request):
@@ -176,7 +180,9 @@ def register_tenent(request):
                 "message": "Tenent registered successfully",
                 "data": serializer.data
             },
-            status=status.HTTP_201_CREATED)
+            status=status.HTTP_201_CREATED
+        )
+
     return Response(
         {
             "message": "Validation Error",
@@ -188,11 +194,9 @@ def register_tenent(request):
 
 @api_view(['POST'])
 def tenant_login(request):
-
     serializer = TenantLoginSerializer(data=request.data)
 
     if serializer.is_valid():
-
         email = serializer.validated_data['email']
         password = serializer.validated_data['password']
 
@@ -200,24 +204,29 @@ def tenant_login(request):
             tenant = Tenent.objects.get(email=email)
 
             if tenant.password == password:
-                return Response({
-                    "message": "Login Successful",
-                    "tenant_id": tenant.id,
-                    "name": tenant.name,
-                    "email": tenant.email
-                }, status=status.HTTP_200_OK)
-
+                return Response(
+                    {
+                        "message": "Login Successful",
+                        "tenant_id": tenant.id,
+                        "name": tenant.name,
+                        "email": tenant.email
+                    },
+                    status=status.HTTP_200_OK
+                )
             else:
-                return Response({
-                    "error": "Invalid Password"
-                }, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {"error": "Invalid Password"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
         except Tenent.DoesNotExist:
-            return Response({
-                "error": "Email not registered"
-            }, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"error": "Email not registered"},
+                status=status.HTTP_404_NOT_FOUND
+            )
 
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 @api_view(['POST'])
 def owner_login(request):
@@ -231,117 +240,49 @@ def owner_login(request):
             owner = Owners.objects.get(email=email)
 
             if owner.password == password:
-                return Response({
-                    "message": "Login Successful",
-                    "owner_id": owner.id,
-                    "email": owner.email,
-                    "name": owner.name
-                })
-
+                return Response(
+                    {
+                        "message": "Login Successful",
+                        "owner_id": owner.id,
+                        "email": owner.email,
+                        "name": owner.name
+                    },
+                    status=status.HTTP_200_OK
+                )
             else:
-                return Response({"error": "Invalid Password"}, status=400)
+                return Response(
+                    {"error": "Invalid Password"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
         except Owners.DoesNotExist:
-            return Response({"error": "Owner not found"}, status=404)
+            return Response(
+                {"error": "Owner not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
 
-    return Response(serializer.errors, status=400)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-# @api_view(['GET'])
-# def get_hostel_step3(request, email):
-
-#     try:
-#         owner = Owners.objects.get(email=email)
-#     except Owners.DoesNotExist:
-#         return Response({"error": "Owner not found"}, status=404)
-
-#     try:
-#         hostel = StayHostelDetails.objects.get(owner=owner)
-#     except StayHostelDetails.DoesNotExist:
-#         return Response({"error": "Hostel not found"}, status=404)
-
-#     floors = HostelFloorRoom.objects.filter(hostel=hostel)
-
-#     layout = {}
-
-#     for room in floors:
-#         floor_no = room.floor
-
-#         if floor_no not in layout:
-#             layout[floor_no] = []
-
-#         layout[floor_no].append({
-#             "roomNo": room.roomNo,
-#             "beds": room.sharing
-#         })
-#ADDED BACKEND
-#     result = []
-
-#     for floor_no, rooms in layout.items():
-#         result.append({
-#             "floorNo": floor_no,
-#             "rooms": rooms
-#         })
-#         response_data = {
-#         "owner": {
-#             "id": owner.id,
-#             "name": owner.name,
-#             "email": owner.email,
-#             "phone": owner.phone
-#         },
-#         "hostel": {
-#             "id": hostel.id,
-#             "hostelName": hostel.hostelName,
-#             "location": hostel.location
-#         },
-#         "property_type": "hostel",
-#         "building_layout": result
-#     }
-
-#     # Print full response in terminal
-#     print("API Response Data:", response_data)
-
-#     return Response(response_data)
-#     # return Response({
-#     #     "owner": {
-#     #         "id": owner.id,
-#     #         "name": owner.name,
-#     #         "email": owner.email,
-#     #         "phone": owner.phone
-#     #     },
-#     #     "hostel": {
-#     #         "id": hostel.id,
-#     #         "hostelName": hostel.hostelName,
-#     #         "location": hostel.location
-#     #     },
-#     #     "property_type": "hostel",
-#     #     "building_layout": result
-#     # })
 
 @api_view(['GET'])
 def get_hostel_step3(request, email):
-
     try:
         owner = Owners.objects.get(email=email)
     except Owners.DoesNotExist:
-        return Response({"error": "Owner not found"}, status=404)
+        return Response({"error": "Owner not found"}, status=status.HTTP_404_NOT_FOUND)
 
-    # Get objects safely
     hostel = StayHostelDetails.objects.filter(owner=owner).first()
     apartment = ApartmentStayDetails.objects.filter(owner=owner).first()
     commercial = CommericialDetails.objects.filter(owner=owner).first()
 
     response_data = {}
 
-    # ================= HOSTEL =================
     if hostel is not None:
-
         floors = HostelFloorRoom.objects.filter(hostel=hostel)
 
         layout = {}
-
         for room in floors:
             floor_no = room.floor
-
             if floor_no not in layout:
                 layout[floor_no] = []
 
@@ -351,7 +292,6 @@ def get_hostel_step3(request, email):
             })
 
         result = []
-
         for floor_no, rooms in layout.items():
             result.append({
                 "floorNo": floor_no,
@@ -363,16 +303,12 @@ def get_hostel_step3(request, email):
             "building_layout": result
         }
 
-    # ================= APARTMENT =================
     elif apartment is not None:
-
         floors = ApartmentFloorUnit.objects.filter(apartment=apartment)
 
         layout = {}
-
         for flat in floors:
             floor_no = flat.floor
-
             if floor_no not in layout:
                 layout[floor_no] = []
 
@@ -382,7 +318,6 @@ def get_hostel_step3(request, email):
             })
 
         result = []
-
         for floor_no, flats in layout.items():
             result.append({
                 "floorNo": floor_no,
@@ -394,16 +329,14 @@ def get_hostel_step3(request, email):
             "building_layout": result
         }
 
-    # ================= COMMERCIAL =================
     elif commercial is not None:
-
         floors = CommercialFloor.objects.filter(commercial_property=commercial)
 
         layout = []
-
         for floor in floors:
             layout.append({
                 "floorNo": floor.floorNo,
+                "sectionNo": floor.sectionNo,
                 "area_sqft": floor.area_sqft
             })
 
@@ -413,35 +346,34 @@ def get_hostel_step3(request, email):
         }
 
     else:
-        return Response({"error": "No property found for this owner"}, status=404)
+        return Response(
+            {"error": "No property found for this owner"},
+            status=status.HTTP_404_NOT_FOUND
+        )
 
-    # ================= OWNER INFO =================
-    # response_data["owner"] = {
-        
-    #     "id": owner.id,
-    #     "name": owner.name,
-    #     "email": owner.email,
-    #     "phone": owner.phone
-    # }
     response_data["owner"] = {
-    "id": owner.id,
-    "name": owner.name,
-    "email": owner.email,
-    "phone": owner.phone
-}
+        "id": owner.id,
+        "name": owner.name,
+        "email": owner.email,
+        "phone": owner.phone
+    }
 
     print("API Response:", response_data)
-
-    return Response(response_data)
-
+    return Response(response_data, status=status.HTTP_200_OK)
 
 
- 
 @api_view(['GET'])
 def get_properties_listing(request):
     property_list = []
- 
-    # ---------------- HOSTELS ----------------
+
+    def build_gallery_urls(gallery_list):
+        if not gallery_list:
+            return []
+        return [
+            request.build_absolute_uri(settings.MEDIA_URL + path)
+            for path in gallery_list
+        ]
+
     hostels = StayHostelDetails.objects.select_related('owner').all()
     for hostel in hostels:
         property_list.append({
@@ -451,16 +383,14 @@ def get_properties_listing(request):
             "name": hostel.hostelName,
             "address": hostel.location,
             "contact": hostel.owner.phone if hostel.owner else None,
-            "latitude": None,   # not available in model
-            "longitude": None,  # not available in model
-            "image": request.build_absolute_uri(hostel.owner_property_photos.url) if hostel.owner_property_photos else None,
-            "gallery": hostel.gallery_images if hostel.gallery_images else [], #New
-            "isAvailable": True,   # default for now
-            "rating": None,        # not available in model
+            "latitude": None,
+            "longitude": None,
+            "gallery": build_gallery_urls(hostel.gallery_images),
+            "isAvailable": True,
+            "rating": None,
             "facilities": hostel.facilities if hostel.facilities else [],
         })
- 
-    # ---------------- APARTMENTS ----------------
+
     apartments = ApartmentStayDetails.objects.select_related('owner').all()
     for apartment in apartments:
         allowed_tenants = None
@@ -468,24 +398,22 @@ def get_properties_listing(request):
             allowed_tenants = "FamilyOnly"
         elif apartment.tenantType == "bachelors":
             allowed_tenants = "BachelorsOnly"
- 
+
         property_list.append({
             "id": str(apartment.id),
             "type": "Apartment",
             "name": apartment.apartmentName,
             "address": apartment.location,
             "contact": apartment.owner.phone if apartment.owner else None,
-            "latitude": None,   # not available in model
-            "longitude": None,  # not available in model
-            "image": request.build_absolute_uri(apartment.owner_property_photos.url) if apartment.owner_property_photos else None,
-            "gallery": apartment.gallery_images if apartment.gallery_images else [],  # ⭐ ADD THIS
-            "isAvailable": True,   # default for now
-            "rating": None,        # not available in model
+            "latitude": None,
+            "longitude": None,
+            "gallery": build_gallery_urls(apartment.gallery_images),
+            "isAvailable": True,
+            "rating": None,
             "facilities": apartment.facilities if apartment.facilities else [],
             "allowedTenants": allowed_tenants,
         })
- 
-    # ---------------- COMMERCIAL ----------------
+
     commercials = CommericialDetails.objects.select_related('owner').all()
     for commercial in commercials:
         property_list.append({
@@ -494,15 +422,14 @@ def get_properties_listing(request):
             "name": commercial.commercialName,
             "address": commercial.location,
             "contact": commercial.owner.phone if commercial.owner else None,
-            "latitude": None,   # not available in model
-            "longitude": None,  # not available in model
-            "image": request.build_absolute_uri(commercial.owner_property_photos.url) if commercial.owner_property_photos else None,
-            "gallery": commercial.gallery_images if commercial.gallery_images else [],  # ⭐ ADD THIS          
-            "isAvailable": True,   # default for now
-            "rating": None,        # not available in model
+            "latitude": None,
+            "longitude": None,
+            "gallery": build_gallery_urls(commercial.gallery_images),
+            "isAvailable": True,
+            "rating": None,
             "facilities": commercial.facilities if commercial.facilities else [],
         })
- 
+
     return Response(
         {
             "count": len(property_list),
@@ -511,28 +438,57 @@ def get_properties_listing(request):
         status=status.HTTP_200_OK
     )
 
+
 @api_view(['POST'])
 def registerbeds(request):
     serializer = TenantSerializer(data=request.data)
 
     if serializer.is_valid():
         serializer.save()
-        return Response({
-            "message": "Tenant Added Successfully",
-            "data": serializer.data
-            }, status=status.HTTP_201_CREATED)
+        return Response(
+            {
+                "message": "Tenant Added Successfully",
+                "data": serializer.data
+            },
+            status=status.HTTP_201_CREATED
+        )
 
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 @api_view(['GET'])
 def get_tenantsbeds(request):
     tenants = TenantBeds.objects.all()
     serializer = TenantSerializer(tenants, many=True)
 
-    # Print data in Django console
     print("Tenant Data:", serializer.data)
 
-    return Response({
-        "message": "Tenant list fetched successfully",
-        "data": serializer.data
-    })
+    return Response(
+        {
+            "message": "Tenant list fetched successfully",
+            "data": serializer.data
+        },
+        status=status.HTTP_200_OK
+    )
+@api_view(['GET'])
+def owner_admin_list(request):
+    owners = Owners.objects.all().order_by('-id')
+
+    data = []
+    for owner in owners:
+        data.append({
+            "id": owner.id,
+            "owner_name": owner.name,
+            "phone": owner.phone,
+            "email": owner.email,
+            "properties": 1,
+            "status": owner.status
+        })
+
+    return Response(
+        {
+            "count": len(data),
+            "data": data
+        },
+        status=status.HTTP_200_OK
+    )

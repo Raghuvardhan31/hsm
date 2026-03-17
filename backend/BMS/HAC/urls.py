@@ -13,6 +13,7 @@ urlpatterns = [
     path('owner_props/', views.get_properties_listing),
     path('tenentbeds/', views.registerbeds),
     path('getbeds/', views.get_tenantsbeds),
+    path('owner-admin/', views.owner_admin_list),
     
 ]
 if settings.DEBUG:

@@ -24,7 +24,8 @@ class OwnerRegistrationSerializer(serializers.ModelSerializer):
             'email',
             'phone',
             'password',
-            'owner_img_field'
+            'owner_img_field',
+            'status'
         ]
         extra_kwargs = {
             'password': {'write_only': True}
@@ -61,8 +62,7 @@ class HostelSerializer(serializers.ModelSerializer):
             'hostelType',
             'facilities',
             'owner_ship_proof',
-            'owner_property_photos',
-            'gallery_images' 
+            'gallery_images'
         ]
 
 
@@ -76,9 +76,9 @@ class HostelRoomSerializer(serializers.ModelSerializer):
             'id',
             'owner',
             'hostel',
-            'floorNo',
+            'floor',
             'roomNo',
-            'beds'
+            'sharing'
         ]
         extra_kwargs = {
             'owner': {'write_only': True},
@@ -98,11 +98,9 @@ class ApartmentSerializer(serializers.ModelSerializer):
             'stayType',
             'apartmentName',
             'location',
-            # 'bhk',
             'tenantType',
             'facilities',
             'owner_ship_proof',
-            'owner_property_photos',
             'gallery_images'
         ]
         extra_kwargs = {
@@ -120,9 +118,9 @@ class ApartmentRoomSerializer(serializers.ModelSerializer):
             'id',
             'owner',
             'apartment',
-            'floorNo',
-            'roomNo',
-            'bhkType'
+            'floor',
+            'flatNo',
+            'bhk'
         ]
         extra_kwargs = {
             'owner': {'write_only': True},
@@ -140,15 +138,16 @@ class CommercialSerializer(serializers.ModelSerializer):
             'id',
             'owner',
             'stayType',
-            'commercialName',    # ✅ Correct field name
+            'commercialName',
             'location',
             'usage',
             'facilities',
             'owner_ship_proof',
-            'owner_property_photos',
-            'gallery_images'  
+            'gallery_images'
         ]
-        extra_kwargs = {'owner': {'write_only': True}}
+        extra_kwargs = {
+            'owner': {'write_only': True}
+        }
 
 
 # ----------------------------
@@ -164,7 +163,6 @@ class CommercialSqftSerializer(serializers.ModelSerializer):
             'floorNo',
             'sectionNo',
             'area_sqft'
-            # 'squareFeet'
         ]
         extra_kwargs = {
             'owner': {'write_only': True},
@@ -172,6 +170,9 @@ class CommercialSqftSerializer(serializers.ModelSerializer):
         }
 
 
+# ----------------------------
+# 9️⃣ Tenant Registration Serializer
+# ----------------------------
 class TenentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tenent
@@ -188,18 +189,27 @@ class TenentSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'password': {'write_only': True}
         }
-    
+
+
+# ----------------------------
+# 🔟 Tenant Login Serializer
+# ----------------------------
 class TenantLoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField()
 
+
+# ----------------------------
+# 1️⃣1️⃣ Owner Login Serializer
+# ----------------------------
 class OwnerLoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField()
 
 
-
-
+# ----------------------------
+# 1️⃣2️⃣ Tenant Beds Serializer
+# ----------------------------
 class TenantSerializer(serializers.ModelSerializer):
     class Meta:
         model = TenantBeds

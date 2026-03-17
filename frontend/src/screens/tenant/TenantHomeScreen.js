@@ -137,12 +137,12 @@ export default function TenantHomeScreen() {
 // };
 const fetchProperties = async () => {
   try {
-    const response = await fetch("http://192.168.1.23:8000/api/owner_props/");
+    const response = await fetch("http://192.168.1.37:8000/api/owner_props/");
     const result = await response.json();
 
     console.log("API RESPONSE:", result);
 
-    const BASE_URL = "http://192.168.1.23:8000/media/";
+    const BASE_URL = "http://192.168.1.37:8000/media/";
 
     const formattedData = result.data.map((item) => {
       // ✅ MAIN IMAGE FIX

@@ -76,9 +76,9 @@ WSGI_APPLICATION = 'BMS.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'srinudb',
+        'NAME': 'tanvox_db2',
         'USER': 'postgres',
-        'PASSWORD': 'Srini123',
+        'PASSWORD': '123456',
         'HOST': 'localhost',
         'PORT': '5432',
     }

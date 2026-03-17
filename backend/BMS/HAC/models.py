@@ -18,6 +18,12 @@ class Owners(models.Model):
         blank=True,
         null=True
     )
+    STATUS_CHOICES = [
+        ('active', 'Active'),
+        ('pending', 'Pending'),
+        ('suspend', 'Suspend'),
+    ]
+    status = models.CharField(choices=STATUS_CHOICES, max_length=20, default='pending')
 
     def __str__(self):
         return self.name
@@ -43,7 +49,6 @@ class StayHostelDetails(models.Model):
     hostelType = models.CharField(max_length=20, choices=HOSTEL_TYPE_CHOICES, blank=True, null=True)
     facilities = models.JSONField(blank=True, null=True)
     owner_ship_proof = models.FileField(upload_to='identity_proofs/', blank=True, null=True)
-    owner_property_photos = models.FileField(upload_to='identity_proofs/', blank=True, null=True)
     gallery_images = models.JSONField(blank=True, null=True) #New
 
     def __str__(self):
@@ -76,12 +81,10 @@ class ApartmentStayDetails(models.Model):
     tenantType = models.CharField(max_length=20, choices=TENANT_TYPE_CHOICES, null=True, blank=True)
     facilities = models.JSONField(blank=True, null=True)
     owner_ship_proof = models.FileField(upload_to='identity_proofs/', blank=True, null=True)
-    owner_property_photos = models.FileField(upload_to='identity_proofs/', blank=True, null=True)
     gallery_images = models.JSONField(blank=True, null=True) #New
 
     def __str__(self):
-        return f"{self.apartmentName} - {self.bhk}"
-
+        return self.apartmentName or "Apartment"
 
 # ------------------ COMMERCIAL ------------------
 class CommericialDetails(models.Model):
@@ -102,7 +105,6 @@ class CommericialDetails(models.Model):
     usage = models.CharField(max_length=20, choices=USAGE_CHOICES, blank=True, null=True)
     facilities = models.JSONField(blank=True, null=True)
     owner_ship_proof = models.FileField(upload_to='identity_proofs/', blank=True, null=True)
-    owner_property_photos = models.FileField(upload_to='identity_proofs/', blank=True, null=True)
     gallery_images = models.JSONField(blank=True, null=True) #New
 
     def __str__(self):

@@ -137,7 +137,7 @@ const bedsData =
   useEffect(() => {
   if (!email) return;
 
-  fetch(`http://192.168.1.23:8000/owner/hosteldetails/${encodeURIComponent(email)}/`)
+  fetch(`http://35.154.25.2:8000/api/details/${encodeURIComponent(email)}/`)
     .then((res) => res.json())
     .then((data) => {
       console.log("API Response:", data);
@@ -246,7 +246,10 @@ const dynamicFloors = response_data?.building_layout
       if (stayType === "commercial") {
         return {
           floor: `Floor ${f.floorNo}`,
-          units: [{ label: `${f.area} sq yd` }],
+          units: (f.sections || []).map((s, idx) => ({
+            label: s.area ? `${s.area} sq.ft` : `Section ${s.sectionNo}`,
+            sectionNo: s.sectionNo
+          })),
         };
       }
 
@@ -259,11 +262,14 @@ const dynamicFloors = response_data?.building_layout
   //   const count = bedCounts[key] ?? 0;
   //   return count > 0;
   // };
-  const isOccupied = (floorLabel, unit) => {
-  const key = `${floorLabel}-${unit}`;
+  // const isOccupied = (floorLabel, unit) => {
+  // const key = `${floorLabel}-${unit}`;
+  // const count = bedCounts[key] ?? 0;
+  const isOccupied = (floorLabel, unitLabel) => {
+  const key = `${floorLabel}-${unitLabel}`;
   const count = bedCounts[key] ?? 0;
 
-  if (stayType === "apartment" || stayType === "commercial") {
+  if (stayType === "commercial") {
     return count > 0;
   }
 
@@ -369,13 +375,20 @@ const emptyRooms = totalRooms - occupiedRooms;
       isValidName(tenantName) &&
       isValidPhone(contactNumber) &&
       monthlyRent.trim().length > 0 &&
-      idProofFile.trim().length > 0 &&
-      isValidEmail(email) &&
+      (idProofUri || idOpenUri) &&
+      isValidEmail(tenantEmail) &&
       bedNumber >= 1 &&
       bedNumber <= 4
     );
   };
   const addTenant = () => {
+    console.log("ADDING TENANT", {
+    tenantName,
+    contactNumber,
+    tenantEmail,
+    monthlyRent,
+    idProofUri,
+  });
     if (!selectedFloor || !selectedRoom) {
       setModalVisible(false);
       return;
@@ -391,7 +404,7 @@ const emptyRooms = totalRooms - occupiedRooms;
         {
           name: tenantName.trim(),
           phone: contactNumber.trim(),
-          email: email.trim(),
+          email: tenantEmail.trim(),
           bed: bedNumber,
           rent: monthlyRent.trim(),
           checkIn: checkIn.trim(),
@@ -423,12 +436,16 @@ const emptyRooms = totalRooms - occupiedRooms;
       const next = Math.max(0, (prev[key] ?? 0) - 1);
       return { ...prev, [key]: next };
     });
-  };
-  const getTotalBeds = (floorLabel, roomLabel) => {
+  };const getTotalBeds = (floorLabel, roomLabel) => {
   const floor = dynamicFloors.find((f) => f.floor === floorLabel);
-  const room = floor?.rooms.find((r) => r.roomLabel === roomLabel);
-  return room?.beds ?? 0;
+  const unit = floor?.units.find((u) => u.label === roomLabel);
+  return unit?.beds ?? 0;
 };
+//   const getTotalBeds = (floorLabel, roomLabel) => {
+//   const floor = dynamicFloors.find((f) => f.floor === floorLabel);
+//   const room = floor?.rooms.find((r) => r.roomLabel === roomLabel);
+//   return room?.beds ?? 0;
+// };
 
 const saveTenant = async () => {
   try {
@@ -451,7 +468,7 @@ const saveTenant = async () => {
     }
 
     const response = await fetch(
-      "http://192.168.1.44:8000/owner/tenentbeds/",
+      "http://192.168.1.37:8000/api/tenentbeds/",
       {
         method: "POST",
         headers: {
@@ -471,10 +488,14 @@ const saveTenant = async () => {
   return (
     <ScrollView style={styles.container} keyboardShouldPersistTaps="always">
       {/* Header */}
-      <Text style={styles.header}>{dashboardData?.name}</Text>
+      <Text style={styles.welcome}>Hello, {ownerName}</Text>
+{/* <Text style={{ color: "#666", marginBottom: 8 }}>{ownerEmail}</Text> */}
 
-      <Text>{dashboardData?.email}</Text>
-      <Text style={styles.welcome}>Hello {ownerName}</Text>
+      {/* <Text style={styles.header}>{dashboardData?.name}</Text> */}
+{/* <Text style={styles.header}>{ownerName}</Text>
+<Text>{ownerEmail}</Text> */}
+      {/* <Text>{dashboardData?.email}</Text> */}
+      {/* <Text style={styles.welcome}>Hello {ownerName}</Text> */}
       {/* Stats Section */}
       <View style={styles.statsContainer}>
         <TouchableOpacity
@@ -677,7 +698,7 @@ const saveTenant = async () => {
   </TouchableOpacity>
 )}
 
-</View> */}
+</View>
 <View style={styles.roomGrid}>
   {(item.units || []).map((unit, i) => (
     <TouchableOpacity
@@ -693,6 +714,47 @@ const saveTenant = async () => {
       {stayType === "apartment" && (
         <Text style={styles.roomText}>{unit.type}</Text>
       )}
+    </TouchableOpacity>
+  ))}
+</View> */}
+<View style={styles.roomGrid}>
+  {(item.units || []).map((unit, i) => (
+    <TouchableOpacity
+      key={unit.label || i}
+      style={[
+        styles.roomBox,
+        { backgroundColor: getTileColor(item.floor, unit.label) },
+      ]}
+      onPress={() => openTenantModal(item.floor, unit.label)}
+    >
+      {stayType === "hostel" && (
+  <>
+    <Text style={styles.roomNumber}>{unit.label}</Text>
+    <Text style={styles.roomText}>
+      {getCount(item.floor, unit.label)}/{unit.beds} beds
+    </Text>
+  </>
+)}
+
+{stayType === "apartment" && (
+  <>
+    <Text style={styles.roomNumber}>{unit.label}</Text>
+    <Text style={styles.roomText}>{unit.type}</Text>
+  </>
+)}
+
+{stayType === "commercial" && (
+  <Text style={styles.roomNumber}>{unit.label}</Text>
+)}
+
+      <View style={styles.controlsRow}>
+        <TouchableOpacity
+          style={styles.controlBtn}
+          onPress={() => openTenantModal(item.floor, unit.label)}
+        >
+          <Text style={styles.controlText}>+</Text>
+        </TouchableOpacity>
+      </View>
     </TouchableOpacity>
   ))}
 </View>
@@ -753,7 +815,7 @@ const saveTenant = async () => {
     style={styles.controlBtn}
     onPress={() => openTenantModal(item.floor, room.roomLabel)}
   >
-    <Text style={styles.controlText}>+</Text>
+    // <Text style={styles.controlText}>+</Text>
   </TouchableOpacity>
 </View>
                     </TouchableOpacity>
@@ -782,8 +844,15 @@ const saveTenant = async () => {
                   ]}
                 >
                   <Text style={styles.modalTitle}>
-                    {selectedRoom ? `Room ${selectedRoom}` : "Room"}
-                  </Text>
+{
+  stayType === "hostel" && `Room ${selectedRoom}`
+}
+{
+  stayType === "apartment" && `Flat ${selectedRoom}`
+}
+{
+  stayType === "commercial" && `Section ${selectedRoom}`
+}                  </Text>
                   <TouchableOpacity
                     style={styles.modalCloseBtn}
                     onPress={() => setModalVisible(false)}
@@ -791,24 +860,42 @@ const saveTenant = async () => {
                     <Text style={styles.modalClose}>×</Text>
                   </TouchableOpacity>
                 </View>
-                <View style={styles.modalStatsRow}>
-                  <View style={styles.modalStatBlock}>
-                    <Text style={styles.modalStatLabel}>Occupancy</Text>
-                    <Text style={styles.modalStatValue}>
-{getCount(selectedFloor ?? "", selectedRoom ?? "")}/
-{getTotalBeds(selectedFloor ?? "", selectedRoom ?? "")}                    </Text>
-                  </View>
-                  <View style={styles.modalStatBlock}>
-                    <Text style={styles.modalStatLabel}>Available</Text>
-                    <Text style={[styles.modalStatValue, { color: "#2ECC71" }]}>
-                      {Math.max(
-  0,
-  getTotalBeds(selectedFloor ?? "", selectedRoom ?? "") -
-  getCount(selectedFloor ?? "", selectedRoom ?? "")
-)} beds
-                    </Text>
-                  </View>
-                </View>
+                  <View style={styles.modalStatsRow}>
+  <View style={styles.modalStatBlock}>
+    <Text style={styles.modalStatLabel}>Occupancy</Text>
+    <Text style={styles.modalStatValue}>
+      {getCount(selectedFloor ?? "", selectedRoom ?? "") > 0
+        ? "Occupied"
+        : "Vacant"}
+    </Text>
+  </View>
+
+  <View style={styles.modalStatBlock}>
+    <Text style={styles.modalStatLabel}>Available</Text>
+
+    {stayType === "apartment" ? (
+      <Text style={[styles.modalStatValue, { color: "#0a7ea4" }]}>
+        {
+          dynamicFloors
+            .find(f => f.floor === selectedFloor)
+            ?.units.find(u => u.label === selectedRoom)?.type
+        }
+      </Text>
+    ) : stayType === "commercial" ? (
+      <Text style={[styles.modalStatValue, { color: "#0a7ea4" }]}>
+        Section {selectedRoom}
+      </Text>
+    ) : (
+      <Text style={[styles.modalStatValue, { color: "#2ECC71" }]}>
+        {Math.max(
+          0,
+          getTotalBeds(selectedFloor ?? "", selectedRoom ?? "") -
+          getCount(selectedFloor ?? "", selectedRoom ?? "")
+        )} beds
+      </Text>
+    )}
+  </View>
+</View>
                 <View style={styles.modalSectionHeader}>
                   <View
                     style={{
@@ -1615,8 +1702,8 @@ const saveTenant = async () => {
                     style={[
                       styles.input,
                       touchedEmail &&
-                        email.trim().length > 0 &&
-                        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) &&
+                        tenantEmail.trim().length > 0 &&
+!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(tenantEmail.trim()) &&
                         styles.inputError,
                     ]}
                     placeholder="Email (optional)"
@@ -1855,12 +1942,22 @@ const saveTenant = async () => {
                 >
                   <Text style={styles.addBtnText}>Add Tenant</Text>
                 </TouchableOpacity> */}
-                <TouchableOpacity
+                {/* <TouchableOpacity
                 style={[styles.addBtn, !isFormValid() && { opacity: 0.5 }]}
                    onPress={saveTenant}
                    >
                 <Text>Add Tenant</Text>
-               </TouchableOpacity>
+               </TouchableOpacity> */}
+               <TouchableOpacity
+  style={[styles.addBtn, !isFormValid() && { opacity: 0.5 }]}
+  onPress={() => {
+    addTenant();     // updates UI
+    saveTenant();    // sends to backend
+  }}
+  disabled={!isFormValid()}
+>
+  <Text style={styles.addBtnText}>Add Tenant</Text>
+</TouchableOpacity>
               </ScrollView>
             </View>
           </KeyboardAvoidingView>
