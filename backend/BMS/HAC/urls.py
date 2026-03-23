@@ -14,6 +14,7 @@ urlpatterns = [
     path('tenentbeds/', views.registerbeds),
     path('getbeds/', views.get_tenantsbeds),
     path('owner-admin/', views.owner_admin_list),
+    path('owner_data/<path:email>/', views.get_owner_full_details),
     
 ]
 if settings.DEBUG:

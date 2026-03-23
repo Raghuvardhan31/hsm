@@ -13,6 +13,7 @@ from .models import (
     CommericialDetails,
     HostelFloorRoom,
     ApartmentFloorUnit,
+    BankDetails,
     CommercialFloor,
     Tenent,
     TenantBeds
@@ -492,3 +493,179 @@ def owner_admin_list(request):
         },
         status=status.HTTP_200_OK
     )
+
+
+
+@api_view(['GET'])
+def get_owner_full_details(request, email):
+    try:
+        owner = Owners.objects.get(email=email)
+    except Owners.DoesNotExist:
+        return Response(
+            {"error": "Owner not found"},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+    def build_file_url(file_field):
+        if file_field:
+            try:
+                return request.build_absolute_uri(file_field.url)
+            except Exception:
+                return None
+        return None
+
+    def build_gallery_urls(gallery_list):
+        if not gallery_list:
+            return []
+        return [
+            request.build_absolute_uri(settings.MEDIA_URL + str(path))
+            for path in gallery_list
+        ]
+
+    # ---------------- STEP 1 : OWNER DETAILS ----------------
+    step1 = {
+        "id": owner.id,
+        "name": owner.name,
+        "email": owner.email,
+        "phone": owner.phone,
+        "status": owner.status,
+        "owner_img_field": build_file_url(owner.owner_img_field)
+    }
+
+    # ---------------- STEP 2 : PROPERTY + BANK DETAILS ----------------
+    bank = BankDetails.objects.filter(owner=owner).first()
+
+    bank_data = None
+    if bank:
+        bank_data = {
+            "bankName": bank.bankName,
+            "ifsc": bank.ifsc,
+            "accountNo": bank.accountNo
+        }
+
+    property_data = None
+    property_type = None
+
+    hostel = StayHostelDetails.objects.filter(owner=owner).first()
+    apartment = ApartmentStayDetails.objects.filter(owner=owner).first()
+    commercial = CommericialDetails.objects.filter(owner=owner).first()
+
+    # ---------------- STEP 3 : BUILDING LAYOUT ----------------
+    building_layout = []
+
+    if hostel:
+        property_type = "hostel"
+        property_data = {
+            "id": hostel.id,
+            "stayType": hostel.stayType,
+            "hostelName": hostel.hostelName,
+            "location": hostel.location,
+            "hostelType": hostel.hostelType,
+            "facilities": hostel.facilities if hostel.facilities else [],
+            "owner_ship_proof": build_file_url(hostel.owner_ship_proof),
+            "gallery_images": build_gallery_urls(hostel.gallery_images),
+        }
+
+        floors = HostelFloorRoom.objects.filter(hostel=hostel).order_by("floor", "roomNo")
+        floor_map = {}
+
+        for room in floors:
+            if room.floor not in floor_map:
+                floor_map[room.floor] = []
+
+            floor_map[room.floor].append({
+                "roomNo": room.roomNo,
+                "beds": room.sharing
+            })
+
+        for floor_no, rooms in floor_map.items():
+            building_layout.append({
+                "floorNo": floor_no,
+                "rooms": rooms
+            })
+
+    elif apartment:
+        property_type = "apartment"
+        property_data = {
+            "id": apartment.id,
+            "stayType": apartment.stayType,
+            "apartmentName": apartment.apartmentName,
+            "location": apartment.location,
+            "tenantType": apartment.tenantType,
+            "facilities": apartment.facilities if apartment.facilities else [],
+            "owner_ship_proof": build_file_url(apartment.owner_ship_proof),
+            "gallery_images": build_gallery_urls(apartment.gallery_images),
+        }
+
+        floors = ApartmentFloorUnit.objects.filter(apartment=apartment).order_by("floor", "flatNo")
+        floor_map = {}
+
+        for flat in floors:
+            if flat.floor not in floor_map:
+                floor_map[flat.floor] = []
+
+            floor_map[flat.floor].append({
+                "flatNo": flat.flatNo,
+                "bhk": flat.bhk
+            })
+
+        for floor_no, flats in floor_map.items():
+            building_layout.append({
+                "floorNo": floor_no,
+                "flats": flats
+            })
+
+    elif commercial:
+        property_type = "commercial"
+        property_data = {
+            "id": commercial.id,
+            "stayType": commercial.stayType,
+            "commercialName": commercial.commercialName,
+            "location": commercial.location,
+            "usage": commercial.usage,
+            "facilities": commercial.facilities if commercial.facilities else [],
+            "owner_ship_proof": build_file_url(commercial.owner_ship_proof),
+            "gallery_images": build_gallery_urls(commercial.gallery_images),
+        }
+
+        floors = CommercialFloor.objects.filter(
+            commercial_property=commercial
+        ).order_by("floorNo", "sectionNo")
+
+        floor_map = {}
+
+        for section in floors:
+            if section.floorNo not in floor_map:
+                floor_map[section.floorNo] = []
+
+            floor_map[section.floorNo].append({
+                "sectionNo": section.sectionNo,
+                "area_sqft": section.area_sqft
+            })
+
+        for floor_no, sections in floor_map.items():
+            building_layout.append({
+                "floorNo": floor_no,
+                "sections": sections
+            })
+
+    else:
+        return Response(
+            {"error": "No property found for this owner"},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+    response_data = {
+        "message": "Owner full details fetched successfully",
+        "property_type": property_type,
+        "step1": step1,
+        "step2": {
+            "property_details": property_data,
+            "bank_details": bank_data
+        },
+        "step3": {
+            "building_layout": building_layout
+        }
+    }
+
+    return Response(response_data, status=status.HTTP_200_OK)

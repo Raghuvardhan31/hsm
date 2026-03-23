@@ -60,7 +60,7 @@ export default function TenantLoginScreen({ navigation }) {
     if (!validateForm()) return;
 
     try {
-      const response = await fetch("http://192.168.1.37:8000/tenent/login/", {
+      const response = await fetch("http://192.168.1.21:8000/tenent/login/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
