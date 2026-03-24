@@ -17,75 +17,63 @@ import Animated, {
 const { width, height } = Dimensions.get("window");
 
 export default function SplashScreen({ onFinish }) {
+
   const logoScale = useSharedValue(0.5);
   const logoOpacity = useSharedValue(0);
   const logoFloat = useSharedValue(0);
+  const logoRotateY = useSharedValue(0);
 
   const titleOpacity = useSharedValue(0);
   const subtitleOpacity = useSharedValue(0);
 
   const screenOpacity = useSharedValue(1);
 
-  // Bubble animations
-  const bubble1 = useSharedValue(height);
-  const bubble2 = useSharedValue(height);
-  const bubble3 = useSharedValue(height);
-
   useEffect(() => {
+
     // Logo intro
     logoOpacity.value = withTiming(1, { duration: 800 });
     logoScale.value = withSpring(1, { damping: 6, stiffness: 120 });
 
-    // Floating logo
+    // Floating animation
     logoFloat.value = withDelay(
       1200,
       withRepeat(
         withTiming(-10, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
         -1,
-        true,
-      ),
+        true
+      )
+    );
+
+    // 3D rotation animation
+    logoRotateY.value = withRepeat(
+      withTiming(360, { duration: 6000, easing: Easing.linear }),
+      -1
     );
 
     // Text animation
     titleOpacity.value = withDelay(1000, withTiming(1, { duration: 800 }));
     subtitleOpacity.value = withDelay(1400, withTiming(1, { duration: 800 }));
 
-    // Bubble animations
-    // bubble1.value = withRepeat(
-    //   withTiming(-100, { duration: 1000, easing: Easing.linear }),
-    //   -1,
-    // );
-
-    // bubble2.value = withDelay(
-    //   1000,
-    //   withRepeat(
-    //     withTiming(-120, { duration: 7000, easing: Easing.linear }),
-    //     -1,
-    //   ),
-    // );
-
-    // bubble3.value = withDelay(
-    //   1000,
-    //   withRepeat(
-    //     withTiming(-150, { duration: 8000, easing: Easing.linear }),
-    //     -1,
-    //   ),
-    // );
-
     // Exit animation
     screenOpacity.value = withDelay(
-      60000,
+      4000,
       withTiming(0, { duration: 900 }, (finished) => {
         if (finished && onFinish) {
           runOnJS(onFinish)();
         }
-      }),
+      })
     );
+
   }, []);
 
   const logoStyle = useAnimatedStyle(() => ({
     opacity: logoOpacity.value,
-    transform: [{ scale: logoScale.value }, { translateY: logoFloat.value }],
+    transform: [
+      { perspective: 1000 },
+      { scale: logoScale.value },
+      { translateY: logoFloat.value },
+      { rotateY: `${logoRotateY.value}deg` },
+    ],
   }));
 
   const titleStyle = useAnimatedStyle(() => ({
@@ -100,33 +88,21 @@ export default function SplashScreen({ onFinish }) {
     opacity: screenOpacity.value,
   }));
 
-  const bubble1Style = useAnimatedStyle(() => ({
-    transform: [{ translateY: bubble1.value }],
-  }));
-
-  const bubble2Style = useAnimatedStyle(() => ({
-    transform: [{ translateY: bubble2.value }],
-  }));
-
-  const bubble3Style = useAnimatedStyle(() => ({
-    transform: [{ translateY: bubble3.value }],
-  }));
-
   return (
     <Animated.View style={[styles.wrapper, screenStyle]}>
       <StatusBar barStyle="light-content" />
 
-      <LinearGradient colors={["#ede0f0", "#5b1e8a"]} style={styles.container}>
-        {/* Background Bubbles */}
-        <Animated.View style={[styles.bubble, styles.b1, bubble1Style]} />
-        <Animated.View style={[styles.bubble, styles.b2, bubble2Style]} />
-        <Animated.View style={[styles.bubble, styles.b3, bubble3Style]} />
+      <LinearGradient
+       colors={["#4A00E0", "#8E2DE2", "#6A5ACD"]}
+        style={styles.container}
+      >
 
         <Animated.View style={logoStyle}>
           <MaterialCommunityIcons
             name="office-building"
             size={120}
             color="#fff"
+            style={styles.logoShadow}
           />
         </Animated.View>
 
@@ -137,12 +113,14 @@ export default function SplashScreen({ onFinish }) {
         <Animated.Text style={[styles.subtitle, subtitleStyle]}>
           Smart Property Management
         </Animated.Text>
+
       </LinearGradient>
     </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
+
   wrapper: {
     flex: 1,
   },
@@ -151,7 +129,13 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    overflow: "hidden",
+  },
+
+  logoShadow: {
+    shadowColor: "#000",
+    shadowOpacity: 0.4,
+    shadowRadius: 20,
+    elevation: 20,
   },
 
   title: {
@@ -167,27 +151,4 @@ const styles = StyleSheet.create({
     color: "#d1d5db",
   },
 
-  bubble: {
-    position: "absolute",
-    backgroundColor: "rgba(255,255,255,0.15)",
-    borderRadius: 100,
-  },
-
-  //   b1: {
-  //     width: 120,
-  //     height: 120,
-  //     left: width * 0.1,
-  //   },
-
-  //   b2: {
-  //     width: 80,
-  //     height: 80,
-  //     left: width * 0.6,
-  //   },
-
-  //   b3: {
-  //     width: 150,
-  //     height: 150,
-  //     left: width * 0.35,
-  //   },
 });

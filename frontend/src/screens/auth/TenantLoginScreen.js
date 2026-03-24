@@ -1,6 +1,7 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 // import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useState,useContext } from "react";
+import { TenantContext } from "@/src/context/TenantContext";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -19,6 +20,7 @@ const GRAY = COLORS.TEXT_SECONDARY;
 const LIGHT_GRAY = COLORS.CARD;
 
 export default function TenantLoginScreen({ navigation }) {
+  const { setTenantEmail } = useContext(TenantContext); 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState({});
@@ -57,36 +59,37 @@ export default function TenantLoginScreen({ navigation }) {
   };
 
   const handleLogin = async () => {
-    if (!validateForm()) return;
+  if (!validateForm()) return;
 
-    try {
-      const response = await fetch("http://192.168.1.21:8000/tenent/login/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: email,
-          password: password,
-        }),
-      });
+  try {
+    const response = await fetch("http://192.168.1.45:8000/api/login/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email: email,
+        password: password,
+      }),
+    });
 
-      const data = await response.json();
-      console.log("SERVER RESPONSE:", data);
+    const data = await response.json();
+    console.log("SERVER RESPONSE:", data);
 
-      if (response.status === 200) {
-        alert("Login Successful");
-
-        navigateTo("TenantNavigation");
-      } else {
-        alert(data.error || "Invalid login credentials");
-      }
-    } catch (error) {
-      console.log("FETCH ERROR:", error);
-      alert("Server not reachable");
+    if (response.status === 200) {
+      alert("Login Successful");
+      setTenantEmail(email);
+      navigation.navigate("TenantNavigation");
+      // Navigate to NotificationScreen and pass the email
+      // navigation.navigate("OwnerNotificationScreen", { email: email });
+    } else {
+      alert(data.error || "Invalid login credentials");
     }
-  };
-
+  } catch (error) {
+    console.log("FETCH ERROR:", error);
+    alert("Server not reachable");
+  }
+};
   return (
     <>
       <StatusBar barStyle="dark-content" backgroundColor={WHITE} />

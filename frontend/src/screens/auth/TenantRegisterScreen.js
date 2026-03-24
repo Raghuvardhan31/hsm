@@ -135,7 +135,7 @@ export default function TenantRegisterScreen({ navigation }) {
         type: type,
       });
 
-      const response = await fetch("http://192.168.1.21:8000/api/tenent/", {
+      const response = await fetch("http://192.168.1.45:8000/api/tenent/", {
         method: "POST",
         body: formData,
       });

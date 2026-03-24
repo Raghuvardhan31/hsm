@@ -669,3 +669,32 @@ def get_owner_full_details(request, email):
     }
 
     return Response(response_data, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+def update_status(request):
+    tenant_id = request.data.get("id")
+    status_value = request.data.get("status")
+
+    tenant = Tenent.objects.get(id=tenant_id)
+    tenant.status = status_value
+    tenant.save()
+
+    return Response({"message": "Status updated"})
+
+@api_view(['GET'])
+def tenantdetails(request, email):
+    tenants = Tenent.objects.filter(email=email)
+
+    data = []
+    for t in tenants:
+        data.append({
+            "id": t.id,
+            "name": t.name,
+            "phone": t.phone,
+            "email": t.email,
+            "gender": t.gender,
+            "status": getattr(t, "status", "pending")
+        })
+
+    return Response(data)

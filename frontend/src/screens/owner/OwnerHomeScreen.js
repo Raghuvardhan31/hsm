@@ -25,7 +25,7 @@
 // const CARD_HEIGHT = 560;
 
 // export default function BuildingScreen({ route }) {
-// const { email } = route.params;
+
 // const [response_data, setResponseData] = useState(null);  
 // // const propertyStayType = response_data?.stay_type || "hostel";
 // const ownerName = response_data?.owner?.name;
@@ -2603,7 +2603,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system";
-
+import { useContext } from "react";
+import { BookingContext } from "@/src/context/BookingContext";
+import { useNavigation } from "@react-navigation/native";
 
 import { useEffect, useRef, useState } from "react";
 import {
@@ -2627,8 +2629,10 @@ import { WebView } from "react-native-webview";
 const CARD_HEIGHT = 560;
 
 export default function BuildingScreen({ route }) {
-  const { email } = route.params;
+const email = route?.params?.email;
+const navigation = useNavigation();
   const [response_data, setResponseData] = useState(null);
+  const { pendingCount } = useContext(BookingContext);
   // const propertyStayType = response_data?.stay_type || "hostel";
   const ownerName = response_data?.owner?.name;
   const ownerEmail = response_data?.owner?.email;
@@ -2739,7 +2743,7 @@ export default function BuildingScreen({ route }) {
   useEffect(() => {
     if (!email) return;
 
-    fetch(`http://192.168.1.21:8000/api/details/${encodeURIComponent(email)}/`)
+    fetch(`http://192.168.1.45:8000/api/details/${encodeURIComponent(email)}/`)
       .then((res) => res.json())
       .then((data) => {
         console.log("API Response:", data);
@@ -3090,7 +3094,7 @@ export default function BuildingScreen({ route }) {
       }
 
       const response = await fetch(
-        "http://192.168.1.21:8000/api/tenentbeds/",
+        "http://192.168.1.45:8000/api/tenentbeds/",
         {
           method: "POST",
           headers: {
@@ -3107,18 +3111,55 @@ export default function BuildingScreen({ route }) {
       console.log("Error saving tenant:", error);
     }
   };
+  const fetchRequests = async () => {
+  if (!email || email.trim() === "") return;
+
+  try {
+    const response = await fetch(
+      `http://192.168.1.45:8000/api/tenantdetails/${encodeURIComponent(email)}/`
+    );
+
+    const text = await response.text();
+    let data = JSON.parse(text);
+
+    const formatted = data.map((item) => ({
+      ...item,
+      seen: false,
+    }));
+
+    setRequests(formatted);
+
+  } catch (error) {
+    console.error("Error fetching tenant requests:", error);
+  }
+};
+
+useEffect(() => {
+  fetchRequests();
+}, [email]);
   return (
     <ScrollView style={styles.container} keyboardShouldPersistTaps="always">
       {/* Header */}
-      <Text style={styles.welcome}>Hello, {ownerName}</Text>
-      {/* <Text style={{ color: "#666", marginBottom: 8 }}>{ownerEmail}</Text> */}
+ <Text style={styles.header}>{dashboardData?.name}</Text>
 
-      {/* <Text style={styles.header}>{dashboardData?.name}</Text> */}
-      {/* <Text style={styles.header}>{ownerName}</Text>
-<Text>{ownerEmail}</Text> */}
-      {/* <Text>{dashboardData?.email}</Text> */}
-      {/* <Text style={styles.welcome}>Hello {ownerName}</Text> */}
-      {/* Stats Section */}
+      <Text>{dashboardData?.email}</Text>
+  <View style={styles.headerRow}>
+
+  <View>
+    <Text style={styles.welcome}>Hello {ownerName}</Text>
+  </View>
+<TouchableOpacity
+  onPress={() => navigation.navigate("OwnerNotificationScreen")}
+>
+  <Ionicons name="notifications-outline" size={28} color="#333" />
+
+  {pendingCount > 0 && (
+    <View style={styles.badge}>
+      <Text style={styles.badgeText}>{pendingCount}</Text>
+    </View>
+  )}
+</TouchableOpacity>
+</View>
       <View style={styles.statsContainer}>
         <TouchableOpacity
           style={[
@@ -4813,7 +4854,18 @@ const styles = StyleSheet.create({
   //   fontSize: 62,
   //   fontWeight: 600,
   // },
+headerRow: {
+  flexDirection: "row",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginBottom: 10,
+},
 
+header: {
+  fontSize: 20,
+  fontWeight: "bold",
+  color: "#333",
+},
   subHeader: {
     fontSize: 62,
     color: "gray",
@@ -5241,4 +5293,22 @@ const styles = StyleSheet.create({
     marginTop: 4,
     marginLeft: 4,
   },
+badge: {
+  position: "absolute",
+  right: -6,
+  top: -4,
+  backgroundColor: "red",
+  borderRadius: 10,
+  minWidth: 18,
+  height: 18,
+  justifyContent: "center",
+  alignItems: "center",
+  paddingHorizontal: 4,
+},
+
+badgeText: {
+  color: "#fff",
+  fontSize: 10,
+  fontWeight: "bold",
+},
 });

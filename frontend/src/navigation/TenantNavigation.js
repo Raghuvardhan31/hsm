@@ -1,12 +1,33 @@
+import React, { useContext } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+
+// Screens
 import TenantHomeScreen from "../screens/tenant/TenantHomeScreen";
-import IssuesScreen from "../screens/tenant/TenantIssuesScreen";
-import PaymentScreen from "../screens/tenant/TenantPaymentScreen";
+import IssuesScreen1 from "../screens/tenant/IssuesScreen1";
+import TenantIssuesScreen from "../screens/tenant/TenantIssuesScreen";
+import PaymentScreen from "../screens/tenant/PaymentScreen";
+import TenantPaymentScreen from "../screens/tenant/TenantPaymentScreen";
 import ProfileScreen from "../screens/tenant/TenantProfileScreen";
+
+// Context
+import { BookingContext } from "../context/BookingContext";
 import COLORS from "../theme/colors";
 
 const Tab = createBottomTabNavigator();
+
+// Wrapper components to decide which screen to show
+function IssuesWrapper() {
+  const { requests = [] } = useContext(BookingContext);
+  const isApproved = requests.some((r) => r.status === "accepted");
+  return isApproved ? <TenantIssuesScreen /> : <IssuesScreen1 />;
+}
+
+function PaymentWrapper() {
+  const { requests = [] } = useContext(BookingContext);
+  const isApproved = requests.some((r) => r.status === "accepted");
+  return isApproved ? <TenantPaymentScreen /> : <PaymentScreen />;
+}
 
 export default function TenantNavigation() {
   return (
@@ -25,26 +46,10 @@ export default function TenantNavigation() {
         },
       })}
     >
-      <Tab.Screen
-        name="Home"
-        component={TenantHomeScreen}
-        options={{ headerShown: false }}
-      />
-      <Tab.Screen
-        name="Payment"
-        component={PaymentScreen}
-        options={{ headerShown: false }}
-      />
-      <Tab.Screen
-        name="Issues"
-        component={IssuesScreen}
-        options={{ headerShown: false }}
-      />
-      <Tab.Screen
-        name="Profile"
-        component={ProfileScreen}
-        options={{ headerShown: false }}
-      />
+      <Tab.Screen name="Home" component={TenantHomeScreen} />
+      <Tab.Screen name="Issues" component={IssuesWrapper} />
+      <Tab.Screen name="Payment" component={PaymentWrapper} />
+      <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
 }

@@ -5865,7 +5865,7 @@ export default function OwnerCommercialSection() {
             }
 
             const response = await fetch(
-              "http://192.168.1.21:8000/api/owner/",
+              "http://192.168.1.45:8000/api/owner/",
               {
                 method: "POST",
                 body: formData,

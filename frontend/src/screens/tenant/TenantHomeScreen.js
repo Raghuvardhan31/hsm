@@ -3,6 +3,9 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import * as FileSystem from "expo-file-system/legacy";
 import * as ImagePicker from "expo-image-picker";
 import * as Location from "expo-location";
+import { useContext } from "react";
+import { BookingContext } from "@/src/context/BookingContext";
+import { useNavigation } from "@react-navigation/native";
 import { useEffect, useRef, useState } from "react";
 import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 // import { BackHandler } from "react-native";
@@ -83,6 +86,14 @@ export default function TenantHomeScreen() {
   const [userCoords, setUserCoords] = useState(null);
 
   const [selectedProperty, setSelectedProperty] = useState(null);
+  const { requests = [], setRequests } = useContext(BookingContext);
+const navigation = useNavigation();
+
+const newNotifications = requests.filter(
+  r =>
+    (r.status === "accepted" || r.status === "rejected") &&
+    !r.seen
+).length;
   // const [selectedGalleryIndex, setSelectedGalleryIndex] = useState(null);
 
   // --- Data ---
@@ -137,12 +148,12 @@ export default function TenantHomeScreen() {
 // };
 const fetchProperties = async () => {
   try {
-    const response = await fetch("http://192.168.1.37:8000/api/owner_props/");
+    const response = await fetch("http://192.168.1.45:8000/api/owner_props/");
     const result = await response.json();
 
     console.log("API RESPONSE:", result);
 
-    const BASE_URL = "http://192.168.1.37:8000/media/";
+    const BASE_URL = "http://192.168.1.45:8000/media/";
 
     const formattedData = result.data.map((item) => {
       // ✅ MAIN IMAGE FIX
@@ -373,11 +384,22 @@ const fetchProperties = async () => {
             <Text style={homeStyles.headerTitle}>Find Property</Text>
             <Text style={homeStyles.headerSub}>{locationName}</Text>
           </View>
-          <View style={homeStyles.headerIcons}>
-            <TouchableOpacity style={homeStyles.notifBtn}>
-              <Ionicons name="notifications-outline" size={24} color="#333" />
-            </TouchableOpacity>
-          </View>
+          <View style={homeStyles.notifContainer}>
+  <TouchableOpacity
+    style={homeStyles.notifBtn}
+    onPress={() => navigation.navigate("TenantNotification")}
+  >
+    <Ionicons name="notifications-outline" size={24} color="#333" />
+  </TouchableOpacity>
+
+  {newNotifications > 0 && (
+    <View style={homeStyles.badge}>
+      <Text style={homeStyles.badgeText}>
+        {newNotifications > 99 ? "99+" : newNotifications}
+      </Text>
+    </View>
+  )}
+</View>
         </View>
 
         <View style={homeStyles.searchWrapper}>
@@ -1634,6 +1656,31 @@ fetch("https://your-api.com/bookings", {
 const isWeb = Platform.OS === "web";
 
 const homeStyles = StyleSheet.create({
+  notifContainer: {
+  position: "relative",
+  marginRight: 12,
+},
+
+badge: {
+  position: "absolute",
+  top: -6,
+  right: -6,
+  backgroundColor: "#ff3b30",
+  borderRadius: 999,
+  minWidth: 18,
+  height: 18,
+  paddingHorizontal: 4,
+  justifyContent: "center",
+  alignItems: "center",
+  borderWidth: 2,
+  borderColor: "#fff",
+},
+
+badgeText: {
+  color: "#fff",
+  fontSize: 10,
+  fontWeight: "bold",
+},
   container: { flex: 1, backgroundColor: "#f8f9fe" },
 
   header: {

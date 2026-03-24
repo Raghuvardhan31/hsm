@@ -2,9 +2,15 @@ import { Ionicons, MaterialCommunityIcons, Feather } from "@expo/vector-icons";
 import React from "react";
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useContext } from "react";
 
-export default function IssuesScreen({ navigation }) {
+
+
+export default function IssuesScreen1({ navigation }) {
+
+   
   return (
+    
     <SafeAreaView style={styles.container}>
       
       {/* 1. MATCHING HEADER */}
@@ -45,11 +51,7 @@ export default function IssuesScreen({ navigation }) {
           You cannot report maintenance issues yet. Please wait for the owner to accept your residency request and verify your room details.
         </Text>
 
-        {/* 4. STATUS INDICATOR */}
-        <View style={styles.statusLabelContainer}>
-           <View style={styles.pulseDot} />
-           <Text style={styles.statusText}>Checking Resident Status...</Text>
-        </View>
+
 
         {/* Action Suggestion */}
         <TouchableOpacity style={styles.contactBtn}>
