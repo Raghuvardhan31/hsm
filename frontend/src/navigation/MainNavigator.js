@@ -19,6 +19,7 @@ import TenantPaymentScreen from "../screens/tenant/TenantPaymentScreen";
 import TenantProfileScreen from "../screens/tenant/TenantProfileScreen";
 
 import PaymentScreen from "../screens/tenant/PaymentScreen";
+import WaitingScreen from "../screens/auth/WaitingScreen"
 const Stack = createStackNavigator();
 export default function MainNavigator() {
   return (
@@ -60,6 +61,7 @@ export default function MainNavigator() {
       <Stack.Screen name="PaymentScreen" component={PaymentScreen} />
 
       <Stack.Screen name="ProfileScreen" component={TenantProfileScreen} />
+        <Stack.Screen name="WaitingScreen" component={WaitingScreen} />
 
     </Stack.Navigator>
   );

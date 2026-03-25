@@ -5865,7 +5865,7 @@ export default function OwnerCommercialSection() {
             }
 
             const response = await fetch(
-              "http://192.168.1.45:8000/api/owner/",
+              "http://192.168.1.15:8000/api/owner/",
               {
                 method: "POST",
                 body: formData,
@@ -5875,19 +5875,30 @@ export default function OwnerCommercialSection() {
             let result;
             try {
               result = await response.json();
+                console.log("Backend response:", result); // ✅ ADD THIS
+
             } catch {
               result = null;
             }
 
             if (response.ok) {
+                global.ownerEmail = result?.email;
+                global.ownerId = result?.id;
+                  console.log("Stored Email:", global.ownerEmail); // ✅ DEBUG
+
               Alert.alert("Success", "Registration successful!", [
                 {
                   text: "OK",
-                  onPress: () => navigation.replace("OwnerLoginScreen"),
+                  onPress: () => navigation.replace("WaitingScreen"),
                 },
               ]);
             } else {
-              Alert.alert("Error", "Registration failed");
+  //             Alert.alert(
+  //   "Error",
+  //   result?.message || result?.error || "Registration failed"
+  // );
+        Alert.alert("Error", JSON.stringify(result)); // ✅ show backend error
+
             }
           } catch (error) {
             Alert.alert("Error", "Network error: " + error.message);

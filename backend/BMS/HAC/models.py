@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 
 STAY_TYPE_CHOICES = [
     ('hostel', 'Hostel'),
@@ -24,6 +25,9 @@ class Owners(models.Model):
         ('suspend', 'Suspend'),
     ]
     status = models.CharField(choices=STATUS_CHOICES, max_length=20, default='pending')
+
+     # ✅ ADD THIS LINE
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.name

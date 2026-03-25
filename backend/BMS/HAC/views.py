@@ -161,8 +161,10 @@ def register_owner(request):
 
     return Response(
         {
-            "message": "Owner Registered Successfully",
-            "gallery_images": gallery_file_paths
+            "message": "Registration successful. Wait for approval (2 days)",
+            "status": owner.status,
+            "created_at": owner.created_at,
+            "email": owner.email
         },
         status=status.HTTP_201_CREATED
     )
@@ -239,21 +241,45 @@ def owner_login(request):
 
         try:
             owner = Owners.objects.get(email=email)
-
-            if owner.password == password:
+            
+            if owner.password != password:
+                return Response(
+                    {"error", "Invalid Password"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            if owner.status == "pending":
+                return Response(
+                    {"error": "Your account is pending approval",
+                     "status" : owner.status,
+                     "message": "Please wait for the admin to approval"
+                     },
+                    status=status.HTTP_401_UNAUTHORIZED
+                )
+            if owner.status == "suspend":
+                return Response(
+                    {
+                        "error" : "Your account is Suspeded",
+                        "status" : owner.status,
+                        "message" : "Please contact admin"
+                    },
+                    status = status.HTTP_403_FORBIDDEN
+                )
+            if owner.status == "active" and owner.password == password:
                 return Response(
                     {
                         "message": "Login Successful",
-                        "owner_id": owner.id,
-                        "email": owner.email,
-                        "name": owner.name
                     },
-                    status=status.HTTP_200_OK
+                    status = status.HTTP_200_OK
                 )
-            else:
-                return Response(
-                    {"error": "Invalid Password"},
-                    status=status.HTTP_400_BAD_REQUEST
+            
+    
+
+            
+
+            return Response(
+                {"error": "Invalid Password"},
+                status=status.HTTP_400_BAD_REQUEST
                 )
 
         except Owners.DoesNotExist:
@@ -670,31 +696,55 @@ def get_owner_full_details(request, email):
 
     return Response(response_data, status=status.HTTP_200_OK)
 
+@api_view(['PATCH'])
+def update_owner_status(request, email):
+    try:
+        owner = Owners.objects.get(email=email)
+    except Owners.DoesNotExist:
+        return Response({"error": "Owner not found"}, status=404)
 
-@api_view(['POST'])
-def update_status(request):
-    tenant_id = request.data.get("id")
-    status_value = request.data.get("status")
+    new_status = request.data.get("status")
 
-    tenant = Tenent.objects.get(id=tenant_id)
-    tenant.status = status_value
-    tenant.save()
+    if not new_status:
+        return Response({"error": "Status required"}, status=400)
 
-    return Response({"message": "Status updated"})
+    allowed_statuses = ["active", "pending", "suspend"]
+
+    if new_status not in allowed_statuses:
+        return Response({
+            "error": "Invalid status",
+            "allowed": allowed_statuses
+        }, status=400)
+
+    owner.status = new_status
+    owner.save()
+
+    return Response({
+        "message": "Status updated",
+        "email": owner.email,
+        "status": owner.status
+    })
+
+
+
+from datetime import timedelta
+from django.utils.timezone import now
+
 
 @api_view(['GET'])
-def tenantdetails(request, email):
-    tenants = Tenent.objects.filter(email=email)
+def check_owner_status(request, email):
+    try:
+        owner = Owners.objects.get(email=email)
+    except Owners.DoesNotExist:
+        return Response({"error": "Owner not found"}, status=404)
 
-    data = []
-    for t in tenants:
-        data.append({
-            "id": t.id,
-            "name": t.name,
-            "phone": t.phone,
-            "email": t.email,
-            "gender": t.gender,
-            "status": getattr(t, "status", "pending")
-        })
+    remaining_time = (owner.created_at + timedelta(days=2)) - now()
+    remaining_seconds = int(remaining_time.total_seconds())
 
-    return Response(data)
+    if remaining_seconds < 0:
+        remaining_seconds = 0
+
+    return Response({
+        "status": owner.status,
+        "time_left_seconds": remaining_seconds
+    })

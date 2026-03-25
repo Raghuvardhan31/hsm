@@ -2743,7 +2743,7 @@ const navigation = useNavigation();
   useEffect(() => {
     if (!email) return;
 
-    fetch(`http://192.168.1.45:8000/api/details/${encodeURIComponent(email)}/`)
+    fetch(`http://192.168.1.15:8000/api/details/${encodeURIComponent(email)}/`)
       .then((res) => res.json())
       .then((data) => {
         console.log("API Response:", data);
@@ -3094,7 +3094,7 @@ const navigation = useNavigation();
       }
 
       const response = await fetch(
-        "http://192.168.1.45:8000/api/tenentbeds/",
+        "http://192.168.1.15:8000/api/tenentbeds/",
         {
           method: "POST",
           headers: {
@@ -3116,7 +3116,7 @@ const navigation = useNavigation();
 
   try {
     const response = await fetch(
-      `http://192.168.1.45:8000/api/tenantdetails/${encodeURIComponent(email)}/`
+      `http://192.168.1.15:8000/api/tenantdetails/${encodeURIComponent(email)}/`
     );
 
     const text = await response.text();

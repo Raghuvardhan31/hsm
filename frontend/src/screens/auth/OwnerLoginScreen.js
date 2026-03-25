@@ -57,7 +57,7 @@ export default function OwnerLoginScreen({ navigation }) {
 
     try {
 
-      const response = await fetch("http://192.168.1.45:8000/api/verify/", {
+      const response = await fetch("http://192.168.1.15:8000/api/verify/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -184,9 +184,7 @@ export default function OwnerLoginScreen({ navigation }) {
 
             {/* REGISTER */}
             <View style={styles.bottomRow}>
-              <Text style={styles.bottomText}>
-                Don't have an account?
-              </Text>
+              <Text style={styles.bottomText}>Don&apos;t have an account?</Text>
 
               <TouchableOpacity
                 onPress={() =>

@@ -15,9 +15,8 @@ urlpatterns = [
     path('getbeds/', views.get_tenantsbeds),
     path('owner-admin/', views.owner_admin_list),
     path('owner_data/<path:email>/', views.get_owner_full_details),
-    path('update_status/', views.update_status),
-    path('tenantdetails/<str:email>/', views.tenantdetails),
-    
+    path('owner-status/<path:email>/', views.update_owner_status),
+    path('check-owner-status/<path:email>/', views.check_owner_status),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
