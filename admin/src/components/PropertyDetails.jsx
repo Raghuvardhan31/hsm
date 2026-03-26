@@ -33,11 +33,6 @@ function PropertyDetails({ property, onClose }) {
             </div>
             
             <div className="detail-section">
-              <h4>Monthly Rent</h4>
-              <p>{property.price}</p>
-            </div>
-            
-            <div className="detail-section">
               <h4>Status</h4>
               <span 
                 className="status-badge large"

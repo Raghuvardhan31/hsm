@@ -5,7 +5,7 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
-
+* text=auto
 # Virtual Environment (IMPORTANT)
 backend/demo/
 env/

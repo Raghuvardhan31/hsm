@@ -17,6 +17,7 @@ urlpatterns = [
     path('owner_data/<path:email>/', views.get_owner_full_details),
     path('owner-status/<path:email>/', views.update_owner_status),
     path('check-owner-status/<path:email>/', views.check_owner_status),
+    path('get_all_property_basic_details/', views.get_all_property_basic_details),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

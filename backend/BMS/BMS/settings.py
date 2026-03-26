@@ -76,7 +76,7 @@ WSGI_APPLICATION = 'BMS.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'tanvox_db',
+        'NAME': 'fouzi',
         'USER': 'postgres',
         'PASSWORD': '123456',
         'HOST': 'localhost',

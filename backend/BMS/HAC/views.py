@@ -748,3 +748,157 @@ def check_owner_status(request, email):
         "status": owner.status,
         "time_left_seconds": remaining_seconds
     })
+
+
+# @api_view(['GET'])
+# def get_all_property_basic_details(request):
+#     data = []
+
+#     def build_file_url(file_field):
+#         if not file_field:
+#             return None
+#         try:
+#             if hasattr(file_field, "url") and file_field.url:
+#                 return request.build_absolute_uri(file_field.url)
+#         except Exception:
+#             pass
+#         return None
+
+#     def build_first_gallery_image(gallery_list):
+#         if not gallery_list or not isinstance(gallery_list, list):
+#             return None
+
+#         first_image = gallery_list[0]
+#         if not first_image:
+#             return None
+
+#         first_image = str(first_image).replace("\\", "/").strip()
+
+#         if not first_image:
+#             return None
+
+#         if first_image.startswith("http://") or first_image.startswith("https://"):
+#             return first_image
+
+#         first_image = first_image.lstrip("/")
+
+#         if first_image.startswith("media/"):
+#             return request.build_absolute_uri("/" + first_image)
+
+#         return request.build_absolute_uri(f"{settings.MEDIA_URL}{first_image}")
+
+#     # Hostels
+#     for hostel in StayHostelDetails.objects.all():
+#         data.append({
+#             "email": hostel.owner.email,
+#             "property_type": "hostel",
+#             "image": build_first_gallery_image(hostel.gallery_images) or build_file_url(hostel.owner_ship_proof),# here this file has to be replaced
+#             "name": hostel.hostelName,
+#             "location": hostel.location,
+#             "owner_name": hostel.owner.name,
+#         })
+
+#     # Apartments
+#     for apartment in ApartmentStayDetails.objects.all():
+#         data.append({
+#             "email": apartment.owner.email,
+#             "property_type": "apartment",
+#             "image": build_first_gallery_image(apartment.gallery_images) or build_file_url(apartment.owner_ship_proof),
+#             "name": apartment.apartmentName,
+#             "location": apartment.location,
+#             "owner_name": apartment.owner.name,
+#         })
+
+#     # Commercial
+#     for commercial in CommericialDetails.objects.all():
+#         data.append({
+#             "email": commercial.owner.email,
+#             "property_type": "commercial",
+#             "image": build_first_gallery_image(commercial.gallery_images) or build_file_url(commercial.owner_ship_proof),
+#             "name": commercial.commercialName,
+#             "location": commercial.location,
+#             "owner_name": commercial.owner.name,
+#         })
+
+#     return Response({
+#         "message": "Property basic details fetched successfully",
+#         "count": len(data),
+#         "data": data
+#     }, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+def get_all_property_basic_details(request):
+    data = []
+
+    def build_file_url(file_field):
+        if not file_field:
+            return None
+        try:
+            if hasattr(file_field, "url") and file_field.url:
+                return request.build_absolute_uri(file_field.url)
+        except Exception:
+            pass
+        return None
+
+    def build_first_gallery_image(gallery_list):
+        if not gallery_list or not isinstance(gallery_list, list):
+            return None
+
+        first_image = gallery_list[0]
+        if not first_image:
+            return None
+
+        first_image = str(first_image).replace("\\", "/").strip()
+
+        if not first_image:
+            return None
+
+        if first_image.startswith("http://") or first_image.startswith("https://"):
+            return first_image
+
+        first_image = first_image.lstrip("/")
+
+        if first_image.startswith("media/"):
+            return request.build_absolute_uri("/" + first_image)
+
+        return request.build_absolute_uri(f"{settings.MEDIA_URL}{first_image}")
+
+    # Hostels - only active owners
+    for hostel in StayHostelDetails.objects.select_related("owner").filter(owner__status="active"):
+        data.append({
+            "email": hostel.owner.email,
+            "property_type": "hostel",
+            "image": build_first_gallery_image(hostel.gallery_images) or build_file_url(hostel.owner_ship_proof),
+            "name": hostel.hostelName,
+            "location": hostel.location,
+            "owner_name": hostel.owner.name,
+        })
+
+    # Apartments - only active owners
+    for apartment in ApartmentStayDetails.objects.select_related("owner").filter(owner__status="active"):
+        data.append({
+            "email": apartment.owner.email,
+            "property_type": "apartment",
+            "image": build_first_gallery_image(apartment.gallery_images) or build_file_url(apartment.owner_ship_proof),
+            "name": apartment.apartmentName,
+            "location": apartment.location,
+            "owner_name": apartment.owner.name,
+        })
+
+    # Commercial - only active owners
+    for commercial in CommericialDetails.objects.select_related("owner").filter(owner__status="active"):
+        data.append({
+            "email": commercial.owner.email,
+            "property_type": "commercial",
+            "image": build_first_gallery_image(commercial.gallery_images) or build_file_url(commercial.owner_ship_proof),
+            "name": commercial.commercialName,
+            "location": commercial.location,
+            "owner_name": commercial.owner.name,
+        })
+
+    return Response({
+        "message": "Active property basic details fetched successfully",
+        "count": len(data),
+        "data": data
+    }, status=status.HTTP_200_OK)
