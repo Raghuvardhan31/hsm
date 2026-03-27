@@ -2,7 +2,7 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-} 
+} */
 
 
 body {
@@ -336,7 +336,7 @@ td {
   margin: 20px 0;
 }
 
- .statsCard {
+.statsCard {
   position: relative;
   width: 160px;
   height: 160px;
@@ -349,7 +349,7 @@ td {
   justify-content: center;
   padding: 15px;
   transition: transform 0.2s;
-} 
+}
 
 /* .statsCard {
   position: relative;
@@ -512,6 +512,7 @@ td {
     width: 90%;
   }
 }
+
 @media (max-width: 1400px) {
   .statsContainer {
     gap: 16px;
@@ -1688,7 +1689,7 @@ button {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0,0,0,0.4);
+  background: rgba(0, 0, 0, 0.4);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -1702,7 +1703,7 @@ button {
   overflow-y: auto;
   background: #fff;
   border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
 
 /* Header */
@@ -1834,4 +1835,4 @@ button {
   color: #10b981;
   cursor: pointer;
   margin-bottom: 10px;
-} 
+}
