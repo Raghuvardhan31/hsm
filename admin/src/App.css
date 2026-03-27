@@ -1,8 +1,8 @@
-* {
+/* {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-}
+} 
 
 
 body {
@@ -17,7 +17,7 @@ body {
   min-height: 100vh;
 }
 
-/* Sidebar */
+
 
 .sidebar {
   width: 240px;
@@ -320,15 +320,23 @@ td {
   font-weight: 500;
 }
 
-.statsContainer {
+/* .statsContainer {
   display: flex;
   flex-wrap: wrap;
   gap: 20px;
   justify-content: center;
   margin: 20px 0;
+} */
+
+.statsContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: flex-start;
+  margin: 20px 0;
 }
 
-.statsCard {
+ .statsCard {
   position: relative;
   width: 160px;
   height: 160px;
@@ -341,7 +349,24 @@ td {
   justify-content: center;
   padding: 15px;
   transition: transform 0.2s;
-}
+} 
+
+/* .statsCard {
+  position: relative;
+  flex: 1 1 180px;
+  max-width: 200px;
+  min-width: 180px;
+  height: 180px;
+  background-color: #fff;
+  border-radius: 15px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 22px;
+  transition: transform 0.2s;
+} */
 
 .statsCard:hover {
   transform: translateY(-5px);
@@ -485,6 +510,30 @@ td {
 @media (max-width: 480px) {
   .statsCard {
     width: 90%;
+  }
+}
+@media (max-width: 1400px) {
+  .statsContainer {
+    gap: 16px;
+  }
+
+  .statsCard {
+    flex: 1 1 170px;
+    min-width: 170px;
+    max-width: 190px;
+  }
+}
+
+@media (max-width: 992px) {
+  .statsCard {
+    flex: 1 1 calc(50% - 10px);
+    max-width: unset;
+  }
+}
+
+@media (max-width: 576px) {
+  .statsCard {
+    flex: 1 1 100%;
   }
 }
 
@@ -1785,4 +1834,4 @@ button {
   color: #10b981;
   cursor: pointer;
   margin-bottom: 10px;
-}
+} 

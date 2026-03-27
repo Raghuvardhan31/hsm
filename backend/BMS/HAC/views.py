@@ -902,3 +902,28 @@ def get_all_property_basic_details(request):
         "count": len(data),
         "data": data
     }, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+def dashboard_counts(request):
+    total_owners_count = Owners.objects.filter(status='active').values('phone').distinct().count()
+    active_owners_count = Owners.objects.filter(status='active').count()
+    pending_owners_count = Owners.objects.filter(status='pending').count()
+    suspended_owners_count = Owners.objects.filter(status='suspend').count()
+
+    total_tenants_count = Tenent.objects.count()
+
+
+    return Response(
+        {
+            "message": "Dashboard counts fetched successfully",
+            "data": {
+                "total_owners": total_owners_count,
+                "total_properties": active_owners_count,
+                "pending_owners": pending_owners_count,
+                "suspended_owners": suspended_owners_count,
+                "total_tenants": total_tenants_count,
+            }
+        },
+        status=status.HTTP_200_OK
+    )

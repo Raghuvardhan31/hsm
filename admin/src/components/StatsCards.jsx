@@ -1,43 +1,86 @@
-import React from "react";
+import React, {useState, useEffect } from "react";
 import {
     FaUsers,
     FaUserFriends,
     FaHome,
-    FaCalendarCheck,
+    FaUserClock,
+    FaUserTimes,
     FaChartLine
 } from "react-icons/fa";
 // import "./StatsCards.css"; // Make sure to import the CSS
-
+ 
 function StatsCards({ onCardClick }) {
+    const [statsData, setStatsData] = useState({
+        total_owners: 0,
+        total_properties: 0,
+        pending_owners: 0,
+        suspended_owners: 0,
+        total_tenants: 0
+    });
+    const [error, setError] = useState("");
 
+    useEffect(() => {
+        fetchStats();
+    },[])
+
+    const fetchStats = async () => {
+        try {
+            const response = await fetch("http://192.168.1.31:8000/api/admin_home/");
+            const result = await response.json();
+
+            if(response.ok && result?.data){
+                setStatsData({
+                total_owners: result.data.total_owners || 0,
+                total_properties: result.data.total_properties || 0,
+                pending_owners: result.data.pending_owners || 0,
+                suspended_owners: result.data.suspended_owners || 0,
+                total_tenants: result.data.total_tenants || 0
+            });
+            }
+            else {
+                setError(result?.error || "Failed to fetch owner data");
+                }
+        }
+        catch (err) {
+            console.error("Fetch stats error:", err);
+            setError("Server not reachable");
+        }
+    }
     const stats = [
         {
             title: "Total Owners",
-            value: "248",
+            value: statsData.total_owners,
             icon: <FaUsers />,
             color: "#6c3bff",
             percent: "+12%"
         },
         {
             title: "Total Tenants",
-            value: "1,024",
+            value: statsData.total_tenants,
             icon: <FaUserFriends />,
             color: "#3b82f6",
             percent: "+8%"
         },
         {
             title: "Total Properties",
-            value: "562",
+            value: statsData.total_properties,
             icon: <FaHome />,
             color: "#f59e0b",
             percent: "+5%"
         },
         {
-            title: "Active Bookings",
-            value: "89",
-            icon: <FaCalendarCheck />,
+            title: "Pending Owners",
+            value: statsData.pending_owners,
+            icon: <FaUserClock />,
             color: "#10b981",
             percent: "-3%"
+        },
+        {
+            title: "Suspended Owners",
+            value: statsData.suspended_owners,
+            icon: <FaUserTimes />,
+            color: "#ef4444",
+            percent: "-1%"
         },
         {
             title: "Monthly Revenue",
@@ -47,13 +90,13 @@ function StatsCards({ onCardClick }) {
             percent: "+18%"
         }
     ];
-
+ 
     return (
         <div className="statsContainer">
             {stats.map((item, index) => (
-                <div 
-                    className="statsCard" 
-                    key={index} 
+                <div
+                    className="statsCard"
+                    key={index}
                     onClick={() => onCardClick && onCardClick(item.title)}
                     style={{ cursor: onCardClick ? 'pointer' : 'default' }}
                 >
@@ -72,5 +115,5 @@ function StatsCards({ onCardClick }) {
         </div>
     );
 }
-
-export default StatsCards; 
+ 
+export default StatsCards;
