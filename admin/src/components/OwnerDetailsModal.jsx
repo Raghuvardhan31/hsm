@@ -4,6 +4,7 @@ function OwnerDetailsModal({ email, onClose }) {
   const [ownerDetails, setOwnerDetails] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [selectedImage, setSelectedImage] = useState(null);
 
   useEffect(() => {
     if (!email) return;
@@ -15,7 +16,7 @@ function OwnerDetailsModal({ email, onClose }) {
         setOwnerDetails(null);
 
         const response = await fetch(
-          `http://192.168.1.31:8000/api/owner_data/${email}/`
+          `http://192.168.1.28:8000/api/owner_data/${email}/`
         );
         const result = await response.json();
 
@@ -194,7 +195,8 @@ function OwnerDetailsModal({ email, onClose }) {
                   <img
                     src={ownerDetails.step1.owner_img_field}
                     alt="Owner"
-                    style={ownerImageStyle}
+                    style={{ ...ownerImageStyle, cursor: "pointer" }}
+                    onClick={() => setSelectedImage(ownerDetails.step1.owner_img_field)}
                   />
                 )}
               </div>
@@ -258,14 +260,12 @@ function OwnerDetailsModal({ email, onClose }) {
 
                   {propertyDetails?.owner_ship_proof && (
                     <div style={{ marginTop: "16px" }}>
-                      <a
-                        href={propertyDetails.owner_ship_proof}
-                        target="_blank"
-                        rel="noreferrer"
-                        style={linkStyle}
+                      <button
+                        onClick={() => setSelectedImage(propertyDetails.owner_ship_proof)}
+                        style={{ ...linkStyle, background: "none", border: "none", padding: 0, cursor: "pointer", fontSize: "14px" }}
                       >
                         View Ownership Proof
-                      </a>
+                      </button>
                     </div>
                   )}
                 </div>
@@ -286,7 +286,8 @@ function OwnerDetailsModal({ email, onClose }) {
                           key={index}
                           src={img}
                           alt={`Gallery ${index + 1}`}
-                          style={galleryImage}
+                          style={{ ...galleryImage, cursor: "pointer" }}
+                          onClick={() => setSelectedImage(img)}
                         />
                       ))}
                     </div>
@@ -303,6 +304,52 @@ function OwnerDetailsModal({ email, onClose }) {
             </>
           ) : (
             <p>No details found.</p>
+          )}
+
+          {selectedImage && (
+            <div 
+              style={{
+                position: "fixed",
+                inset: 0,
+                backgroundColor: "rgba(0,0,0,0.85)",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                zIndex: 10001,
+                padding: "20px",
+                cursor: "pointer"
+              }}
+              onClick={() => setSelectedImage(null)}
+            >
+              <img 
+                src={selectedImage} 
+                alt="Enlarged" 
+                style={{
+                  maxWidth: "90%",
+                  maxHeight: "90%",
+                  borderRadius: "12px",
+                  boxShadow: "0 0 30px rgba(0,0,0,0.5)",
+                  objectFit: "contain"
+                }}
+                onClick={(e) => e.stopPropagation()}
+              />
+              <button
+                style={{
+                  position: "absolute",
+                  top: "20px",
+                  right: "30px",
+                  background: "none",
+                  border: "none",
+                  color: "white",
+                  fontSize: "30px",
+                  cursor: "pointer",
+                  fontWeight: "bold"
+                }}
+                onClick={() => setSelectedImage(null)}
+              >
+                ×
+              </button>
+            </div>
           )}
         </div>
 

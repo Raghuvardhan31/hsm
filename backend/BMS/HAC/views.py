@@ -16,7 +16,8 @@ from .models import (
     BankDetails,
     CommercialFloor,
     Tenent,
-    TenantBeds
+    TenantBeds,
+    SuspensionReason
 )
 
 from .serializers import (
@@ -28,7 +29,8 @@ from .serializers import (
     TenentSerializer,
     TenantLoginSerializer,
     OwnerLoginSerializer,
-    TenantSerializer
+    TenantSerializer,
+    SuspensionReasonSerializer
 )
 
 
@@ -927,3 +929,50 @@ def dashboard_counts(request):
         },
         status=status.HTTP_200_OK
     )
+
+
+@api_view(['GET', 'POST'])
+def suspension_reason_view(request):
+    
+    # ✅ GET → fetch all reasons
+    if request.method == 'GET':
+        reasons = SuspensionReason.objects.all()
+        serializer = SuspensionReasonSerializer(reasons, many=True)
+        return Response(serializer.data)
+
+    # ✅ POST → save/update reason
+    elif request.method == 'POST':
+        email = request.data.get("email")
+
+        # 🔥 If already exists → UPDATE instead of error
+        try:
+            obj = SuspensionReason.objects.get(email=email)
+            serializer = SuspensionReasonSerializer(obj, data=request.data)
+        except SuspensionReason.DoesNotExist:
+            serializer = SuspensionReasonSerializer(data=request.data)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(
+                {"message": "Reason saved successfully", "data": serializer.data},
+                status=status.HTTP_200_OK
+            )
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+@api_view(['GET'])
+def get_reason_by_email(request, email):   # ✅ ADD email here
+    try:
+        obj = SuspensionReason.objects.get(email=email)
+        serializer = SuspensionReasonSerializer(obj)
+
+        return Response({
+            "email": serializer.data["email"],
+            "reason": serializer.data["reason"]
+        })
+
+    except SuspensionReason.DoesNotExist:
+        return Response(
+            {"error": "No reason found"},
+            status=404
+        )

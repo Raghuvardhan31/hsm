@@ -19,6 +19,8 @@ urlpatterns = [
     path('check-owner-status/<path:email>/', views.check_owner_status),
     path('get_all_property_basic_details/', views.get_all_property_basic_details),
     path("admin_home/", views.dashboard_counts),
+    path("suspension_reason/", views.suspension_reason_view),
+    path("get_suspension_reason/<path:email>/", views.get_reason_by_email),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

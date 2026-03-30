@@ -9,6 +9,7 @@ function Properties({ onLogout }) {
   const [properties, setProperties] = useState([]);
   const [selectedEmail, setSelectedEmail] = useState(null);
   const [activeFilter, setActiveFilter] = useState("All");
+  const [selectedImage, setSelectedImage] = useState(null);
  
   useEffect(() => {
     fetchBuildings();
@@ -20,7 +21,7 @@ function Properties({ onLogout }) {
       setError("");
  
       const response = await fetch(
-        "http://192.168.1.31:8000/api/get_all_property_basic_details/"
+        "http://192.168.1.28:8000/api/get_all_property_basic_details/"
       );
  
       if (!response.ok) {
@@ -71,32 +72,31 @@ function Properties({ onLogout }) {
           className="properties-page"
           style={{ padding: "30px", minHeight: "auto", background: "transparent" }}
         >
-          <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-              <div>
-                <h1 className="page-title">Properties</h1>
-                <p className="page-subtitle">Manage property listings</p>
-              </div>
-              <div className="filter-buttons" style={{ display: 'flex', gap: '10px', marginLeft: '20px' }}>
-                {['All', 'Hostels', 'Apartments', 'Commercial'].map(filter => (
-                  <button
-                    key={filter}
-                    onClick={() => setActiveFilter(filter)}
-                    style={{
-                      padding: "8px 16px",
-                      borderRadius: "20px",
-                      border: "none",
-                      backgroundColor: activeFilter === filter ? "#7c3aed" : "#e5e7eb",
-                      color: activeFilter === filter ? "white" : "#374151",
-                      cursor: "pointer",
-                      fontWeight: "500",
-                      transition: "all 0.2s"
-                    }}
-                  >
-                    {filter}
-                  </button>
-                ))}
-              </div>
+          <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <div>
+              <h1 className="page-title" style={{ color: "#4c1d95", fontSize: "28px", fontWeight: "700", marginBottom: "4px" }}>Properties</h1>
+              <p className="page-subtitle" style={{ color: "#6b7280", margin: 0 }}>Manage property listings</p>
+            </div>
+            <div className="filter-buttons" style={{ display: 'flex', gap: '10px' }}>
+              {['All', 'Hostels', 'Apartments', 'Commercial'].map(filter => (
+                <button
+                  key={filter}
+                  onClick={() => setActiveFilter(filter)}
+                  style={{
+                    padding: "10px 18px",
+                    borderRadius: "10px",
+                    border: "1px solid #e5e7eb",
+                    backgroundColor: activeFilter === filter ? "#4c1d95" : "#fff",
+                    color: activeFilter === filter ? "#fff" : "#374151",
+                    cursor: "pointer",
+                    fontWeight: "600",
+                    transition: "all 0.2s",
+                    boxShadow: activeFilter === filter ? "0 4px 12px rgba(76, 29, 149, 0.2)" : "none"
+                  }}
+                >
+                  {filter}
+                </button>
+              ))}
             </div>
           </div>
  
@@ -140,11 +140,15 @@ function Properties({ onLogout }) {
                       <img
                         src={property.image}
                         alt={property.name}
+                        onClick={() => setSelectedImage(property.image)}
                         style={{
                           width: "100%",
                           height: "100%",
                           objectFit: "cover",
+                          cursor: "pointer",
+                          transition: "transform 0.3s"
                         }}
+                        className="property-main-img"
                         onError={(e) => {
                           e.target.style.display = "none";
                         }}
@@ -207,6 +211,52 @@ function Properties({ onLogout }) {
             email={selectedEmail}
             onClose={handleCloseDetails}
           />
+
+          {selectedImage && (
+            <div 
+              style={{
+                position: "fixed",
+                inset: 0,
+                backgroundColor: "rgba(0,0,0,0.85)",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                zIndex: 10000,
+                padding: "40px",
+                cursor: "pointer"
+              }}
+              onClick={() => setSelectedImage(null)}
+            >
+              <img 
+                src={selectedImage} 
+                alt="Selected" 
+                style={{
+                  maxWidth: "90%",
+                  maxHeight: "90%",
+                  borderRadius: "12px",
+                  boxShadow: "0 0 30px rgba(0,0,0,0.5)",
+                  objectFit: "contain"
+                }}
+                onClick={(e) => e.stopPropagation()}
+              />
+              <button
+                style={{
+                  position: "absolute",
+                  top: "20px",
+                  right: "30px",
+                  background: "none",
+                  border: "none",
+                  color: "white",
+                  fontSize: "40px",
+                  cursor: "pointer",
+                  fontWeight: "bold"
+                }}
+                onClick={() => setSelectedImage(null)}
+              >
+                ×
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

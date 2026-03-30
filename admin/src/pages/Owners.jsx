@@ -8,6 +8,19 @@ function Owners() {
   const [loading, setLoading] = useState(true);
   const [selectedEmail, setSelectedEmail] = useState(null);
   const [error, setError] = useState("");
+  const [filter, setFilter] = useState("All");
+  const [showSuspendModal, setShowSuspendModal] = useState(false);
+  const [suspendingOwner, setSuspendingOwner] = useState(null);
+  const [selectedReason, setSelectedReason] = useState("");
+  const [customReason, setCustomReason] = useState("");
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+
+  const predefinedReasons = [
+    "Some required documents are missing. Complete your submission.",
+    "Your account is temporarily suspended until verification is completed.",
+    "Account suspended due to incomplete submission. Complete verification to continue using your account.",
+    "Please upload valid ownership proof to proceed.",
+  ];
 
   useEffect(() => {
     fetchOwners();
@@ -18,7 +31,7 @@ function Owners() {
       setLoading(true);
       setError("");
 
-      const response = await fetch("http://192.168.1.31:8000/api/owner-admin/");
+      const response = await fetch("http://192.168.1.28:8000/api/owner-admin/");
       const result = await response.json();
 
       if (response.ok && result?.data) {
@@ -29,6 +42,7 @@ function Owners() {
           email: item.email || "N/A",
           property: item.property_name || "Property",
           status: item.status || "pending",
+          reason: item.reason || item.suspension_reason || "",
         }));
 
         setOwners(formattedData);
@@ -45,18 +59,21 @@ function Owners() {
     }
   };
 
-  const updateOwnerStatus = async (email, newStatus) => {
+  const updateOwnerStatus = async (email, newStatus, reason = "") => {
     const cleanEmail = email.trim().toLowerCase();
 
     try {
       const response = await fetch(
-        `http://192.168.1.31:8000/api/owner-status/${cleanEmail}/`,
+        `http://192.168.1.28:8000/api/owner-status/${encodeURIComponent(cleanEmail)}/`,
         {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ status: newStatus }),
+          body: JSON.stringify({
+            status: newStatus,
+            suspension_reason: reason,
+          }),
         }
       );
 
@@ -64,20 +81,69 @@ function Owners() {
 
       if (!response.ok) {
         alert(result?.error || "Failed to update status");
-        return;
+        return false;
       }
 
       setOwners((prev) =>
         prev.map((owner) =>
           owner.email.toLowerCase() === cleanEmail
-            ? { ...owner, status: newStatus }
+            ? { ...owner, status: newStatus, reason: reason || owner.reason }
             : owner
         )
       );
 
-      alert("Status updated successfully");
+      return true;
     } catch (err) {
       console.error("Status update error:", err);
+      alert("Server not reachable");
+      return false;
+    }
+  };
+
+  const saveSuspendReason = async (email, reason) => {
+    try {
+      const response = await fetch("http://192.168.1.28:8000/api/suspension_reason/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          reason,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        alert(result?.error || "Failed to save suspension reason");
+        return false;
+      }
+
+      return true;
+    } catch (err) {
+      console.error("Save reason error:", err);
+      alert("Server not reachable");
+      return false;
+    }
+  };
+
+  const fetchSuspensionReason = async (email) => {
+    try {
+      const response = await fetch(
+        `http://192.168.1.28:8000/api/get_suspension_reason/${encodeURIComponent(email)}/`
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        alert(result?.error || "Failed to fetch reason");
+        return;
+      }
+
+      alert(`Email: ${result.email}\nReason: ${result.reason}`);
+    } catch (err) {
+      console.error("Fetch reason error:", err);
       alert("Server not reachable");
     }
   };
@@ -85,6 +151,64 @@ function Owners() {
   const closeModal = () => {
     setSelectedEmail(null);
   };
+
+  const handleSuspendClick = (owner) => {
+    setSuspendingOwner(owner);
+    setShowSuspendModal(true);
+
+    if (owner.reason && predefinedReasons.includes(owner.reason)) {
+      setSelectedReason(owner.reason);
+      setCustomReason("");
+    } else if (owner.reason) {
+      setSelectedReason("Other");
+      setCustomReason(owner.reason);
+    } else {
+      setSelectedReason("");
+      setCustomReason("");
+    }
+  };
+
+  const handleSuspendSubmit = async () => {
+    if (!suspendingOwner) {
+      alert("No owner selected");
+      return;
+    }
+
+    if (!selectedReason || (selectedReason === "Other" && !customReason.trim())) {
+      alert("Please select or enter a reason for suspension");
+      return;
+    }
+
+    const finalReason =
+      selectedReason === "Other" ? customReason.trim() : selectedReason;
+
+    alert(`Email: ${suspendingOwner.email}\nReason: ${finalReason}`);
+
+    const reasonSaved = await saveSuspendReason(suspendingOwner.email, finalReason);
+    if (!reasonSaved) return;
+
+    const statusUpdated = await updateOwnerStatus(
+      suspendingOwner.email,
+      "suspend",
+      finalReason
+    );
+    if (!statusUpdated) return;
+
+    setShowSuspendModal(false);
+    setSuspendingOwner(null);
+    setSelectedReason("");
+    setCustomReason("");
+    setShowSuccessPopup(true);
+
+    setTimeout(() => {
+      setShowSuccessPopup(false);
+    }, 3000);
+  };
+
+  const filteredOwners = owners.filter((owner) => {
+    if (filter === "All") return true;
+    return owner.status.toLowerCase() === filter.toLowerCase();
+  });
 
   return (
     <div className="dashboard">
@@ -100,6 +224,33 @@ function Owners() {
               <p style={{ color: "#6b7280", marginBottom: "20px" }}>
                 Manage owners and properties
               </p>
+            </div>
+
+            <div style={filterContainer}>
+              <button
+                style={filter === "All" ? activeFilterBtn : filterBtn}
+                onClick={() => setFilter("All")}
+              >
+                All
+              </button>
+              <button
+                style={filter === "active" ? activeFilterBtn : filterBtn}
+                onClick={() => setFilter("active")}
+              >
+                Active
+              </button>
+              <button
+                style={filter === "pending" ? activeFilterBtn : filterBtn}
+                onClick={() => setFilter("pending")}
+              >
+                Pending
+              </button>
+              <button
+                style={filter === "suspend" ? activeFilterBtn : filterBtn}
+                onClick={() => setFilter("suspend")}
+              >
+                Suspended
+              </button>
             </div>
           </div>
 
@@ -121,11 +272,17 @@ function Owners() {
               </thead>
 
               <tbody>
-                {owners.length > 0 ? (
-                  owners.map((owner) => (
+                {filteredOwners.length > 0 ? (
+                  filteredOwners.map((owner) => (
                     <tr key={owner.id}>
                       <td style={tdStyle}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "10px",
+                          }}
+                        >
                           <div style={avatarStyle}>
                             {owner.name
                               ?.split(" ")
@@ -150,18 +307,42 @@ function Owners() {
                       <td style={tdStyle}>
                         <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
                           <button
-                            style={approveBtn}
-                            onClick={() => updateOwnerStatus(owner.email, "active")}
+                            style={
+                              owner.status.toLowerCase() === "active"
+                                ? disabledBtn
+                                : approveBtn
+                            }
+                            onClick={async () => {
+                              const ok = await updateOwnerStatus(owner.email, "active");
+                              if (ok) {
+                                alert(`Email: ${owner.email}\nStatus: active`);
+                              }
+                            }}
+                            disabled={owner.status.toLowerCase() === "active"}
                           >
                             Approve
                           </button>
 
                           <button
-                            style={suspendBtn}
-                            onClick={() => updateOwnerStatus(owner.email, "suspend")}
+                            style={
+                              owner.status.toLowerCase() === "suspend"
+                                ? disabledBtn
+                                : suspendBtn
+                            }
+                            onClick={() => handleSuspendClick(owner)}
+                            disabled={owner.status.toLowerCase() === "suspend"}
                           >
                             Suspend
                           </button>
+
+                          {owner.status.toLowerCase() === "suspend" && (
+                            <button
+                              style={reasonBtn}
+                              onClick={() => fetchSuspensionReason(owner.email)}
+                            >
+                              Reason
+                            </button>
+                          )}
 
                           <button
                             style={viewBtn}
@@ -186,10 +367,183 @@ function Owners() {
         </div>
 
         <OwnerDetailsModal email={selectedEmail} onClose={closeModal} />
+
+        {showSuspendModal && (
+          <div style={modalOverlayStyle}>
+            <div style={suspendModalContentStyle}>
+              <div style={suspendModalHeaderStyle}>
+                <h3 style={{ margin: 0, color: "#111827" }}>Suspend Owner</h3>
+                <button
+                  onClick={() => setShowSuspendModal(false)}
+                  style={closeBtnStyle}
+                >
+                  ×
+                </button>
+              </div>
+
+              <div style={suspendModalBodyStyle}>
+                <p
+                  style={{
+                    marginBottom: "16px",
+                    color: "#374151",
+                    fontWeight: "600",
+                  }}
+                >
+                  Select a reason for suspension:
+                </p>
+
+                {[...predefinedReasons, "Other"].map((reason, idx) => (
+                  <label key={idx} style={reasonLabelStyle}>
+                    <input
+                      type="radio"
+                      name="suspensionReason"
+                      value={reason}
+                      checked={selectedReason === reason}
+                      onChange={(e) => setSelectedReason(e.target.value)}
+                      style={{ marginRight: "10px" }}
+                    />
+                    {reason}
+                  </label>
+                ))}
+
+                {selectedReason === "Other" && (
+                  <textarea
+                    placeholder="Write your reason here..."
+                    value={customReason}
+                    onChange={(e) => setCustomReason(e.target.value)}
+                    style={customReasonTextAreaStyle}
+                  />
+                )}
+              </div>
+
+              <div style={suspendModalFooterStyle}>
+                <button
+                  onClick={() => setShowSuspendModal(false)}
+                  style={cancelBtnStyle}
+                >
+                  Cancel
+                </button>
+                <button onClick={handleSuspendSubmit} style={submitSuspendBtnStyle}>
+                  Submit
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showSuccessPopup && (
+          <div style={successPopupStyle}>
+            <div style={{ marginRight: "10px", fontSize: "20px" }}>✅</div>
+            <div>Owner successfully suspended!</div>
+          </div>
+        )}
       </div>
     </div>
   );
 }
+
+const modalOverlayStyle = {
+  position: "fixed",
+  inset: 0,
+  background: "rgba(0,0,0,0.5)",
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+  zIndex: 1100,
+};
+
+const suspendModalContentStyle = {
+  background: "white",
+  width: "90%",
+  maxWidth: "500px",
+  borderRadius: "16px",
+  boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
+  overflow: "hidden",
+};
+
+const suspendModalHeaderStyle = {
+  padding: "16px 20px",
+  borderBottom: "1px solid #e5e7eb",
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+};
+
+const suspendModalBodyStyle = {
+  padding: "20px",
+};
+
+const suspendModalFooterStyle = {
+  padding: "16px 20px",
+  borderTop: "1px solid #e5e7eb",
+  display: "flex",
+  justifyContent: "flex-end",
+  gap: "12px",
+};
+
+const reasonLabelStyle = {
+  display: "flex",
+  alignItems: "flex-start",
+  marginBottom: "12px",
+  cursor: "pointer",
+  color: "#4b5563",
+  fontSize: "14px",
+  lineHeight: "1.4",
+};
+
+const customReasonTextAreaStyle = {
+  width: "100%",
+  marginTop: "10px",
+  padding: "10px",
+  borderRadius: "8px",
+  border: "1px solid #d1d5db",
+  fontSize: "14px",
+  minHeight: "80px",
+  outline: "none",
+};
+
+const closeBtnStyle = {
+  background: "none",
+  border: "none",
+  fontSize: "24px",
+  cursor: "pointer",
+  color: "#9ca3af",
+};
+
+const cancelBtnStyle = {
+  padding: "8px 16px",
+  borderRadius: "8px",
+  border: "1px solid #e5e7eb",
+  background: "white",
+  color: "#374151",
+  fontWeight: "600",
+  cursor: "pointer",
+};
+
+const submitSuspendBtnStyle = {
+  padding: "8px 16px",
+  borderRadius: "8px",
+  border: "none",
+  background: "#dc2626",
+  color: "white",
+  fontWeight: "600",
+  cursor: "pointer",
+};
+
+const successPopupStyle = {
+  position: "fixed",
+  bottom: "30px",
+  right: "30px",
+  background: "#16a34a",
+  color: "white",
+  padding: "16px 24px",
+  borderRadius: "12px",
+  boxShadow: "0 4px 15px rgba(0,0,0,0.15)",
+  display: "flex",
+  alignItems: "center",
+  zIndex: 1200,
+  animation: "slideInRight 0.3s ease-out",
+};
 
 const tableStyle = {
   width: "100%",
@@ -249,6 +603,17 @@ const suspendBtn = {
   fontWeight: "600",
 };
 
+const disabledBtn = {
+  background: "#9ca3af",
+  color: "#fff",
+  border: "none",
+  padding: "8px 12px",
+  borderRadius: "8px",
+  cursor: "not-allowed",
+  fontWeight: "600",
+  opacity: 0.6,
+};
+
 const viewBtn = {
   background: "#2563eb",
   color: "#fff",
@@ -257,6 +622,41 @@ const viewBtn = {
   borderRadius: "8px",
   cursor: "pointer",
   fontWeight: "600",
+};
+
+const reasonBtn = {
+  background: "#f59e0b",
+  color: "#fff",
+  border: "none",
+  padding: "8px 12px",
+  borderRadius: "8px",
+  cursor: "pointer",
+  fontWeight: "600",
+};
+
+const filterContainer = {
+  display: "flex",
+  gap: "10px",
+  marginBottom: "20px",
+  flexWrap: "wrap",
+};
+
+const filterBtn = {
+  padding: "8px 16px",
+  borderRadius: "8px",
+  border: "1px solid #e5e7eb",
+  background: "#fff",
+  color: "#374151",
+  cursor: "pointer",
+  fontWeight: "600",
+  transition: "all 0.2s",
+};
+
+const activeFilterBtn = {
+  ...filterBtn,
+  background: "#4c1d95",
+  color: "#fff",
+  borderColor: "#4c1d95",
 };
 
 const getStatusBadgeStyle = (status) => {

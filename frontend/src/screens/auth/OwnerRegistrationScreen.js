@@ -856,7 +856,7 @@ const handleSubmit = async () => {
           }
 
           const response = await fetch(
-            "http://192.168.1.31:8000/api/owner/",
+            "http://192.168.1.28:8000/api/owner/",
             {
               method: "POST",
               body: formData,

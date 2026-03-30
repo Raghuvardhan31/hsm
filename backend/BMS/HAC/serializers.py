@@ -9,7 +9,8 @@ from .models import (
     ApartmentFloorUnit,
     CommercialFloor,
     Tenent,
-    TenantBeds
+    TenantBeds,
+    SuspensionReason
 )
 
 # ----------------------------
@@ -205,4 +206,11 @@ class OwnerLoginSerializer(serializers.Serializer):
 class TenantSerializer(serializers.ModelSerializer):
     class Meta:
         model = TenantBeds
+        fields = '__all__'
+
+
+ 
+class SuspensionReasonSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SuspensionReason
         fields = '__all__'

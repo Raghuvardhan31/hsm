@@ -354,7 +354,7 @@ export default function WaitingScreen({ navigation }) {
       }
 
       const res = await fetch(
-        `http://192.168.1.31:8000/api/check-owner-status/${email}/`
+        `http://192.168.1.28:8000/api/check-owner-status/${email}/`
       );
 
       const data = await res.json();

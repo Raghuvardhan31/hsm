@@ -1,8 +1,8 @@
-/* {
+* {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-} */
+}
 
 
 body {
@@ -421,19 +421,35 @@ td {
 .statsContainer {
   display: flex;
   flex-wrap: nowrap;
-  gap: 25px;
-  /* more spacing between cards */
-  justify-content: space-between;
+  gap: 20px;
+  justify-content: flex-start;
   margin: 20px 0;
+  overflow-x: auto;
+  padding-bottom: 15px;
+  scrollbar-width: thin;
+  scrollbar-color: #4c1d95 #e5e7eb;
+}
+
+.statsContainer::-webkit-scrollbar {
+  height: 6px;
+}
+
+.statsContainer::-webkit-scrollbar-track {
+  background: #f3f4f6;
+  border-radius: 10px;
+}
+
+.statsContainer::-webkit-scrollbar-thumb {
+  background: #4c1d95;
+  border-radius: 10px;
 }
 
 /* Individual Stats Card */
 .statsCard {
   position: relative;
-  width: 200px;
-  /* increased width */
-  height: 180px;
-  /* slightly taller */
+  flex: 0 0 190px;
+  min-width: 170px;
+  height: 150px;
   background-color: #fff;
   border-radius: 15px;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
@@ -441,7 +457,7 @@ td {
   flex-direction: column;
   align-items: flex-start;
   justify-content: center;
-  padding: 22px;
+  padding: 18px;
   transition: transform 0.2s;
 }
 
@@ -473,18 +489,18 @@ td {
 
 /* Card Icon */
 .cardIcon {
-  font-size: 36px;
-  /* larger icon */
+  font-size: 32px;
+  /* slightly smaller icon */
   color: #fff;
-  padding: 12px;
+  padding: 10px;
   border-radius: 50%;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 
 /* Card Value */
 .cardValue {
-  font-size: 20px;
-  /* larger number */
+  font-size: 18px;
+  /* slightly smaller number */
   font-weight: bold;
   color: #1f2937;
   margin: 0;
@@ -492,11 +508,11 @@ td {
 
 /* Card Title */
 .cardTitle {
-  font-size: 16px;
-  /* bigger title */
+  font-size: 14px;
+  /* slightly smaller title */
   color: #6b7280;
-  margin-top: 6px;
-  text-align: center;
+  margin-top: 5px;
+  text-align: left;
 }
 
 /* Optional: make it responsive */
@@ -1818,6 +1834,17 @@ button {
 .image-box img {
   width: 150px;
   border-radius: 10px;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 /* Footer */

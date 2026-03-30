@@ -25,7 +25,7 @@ function StatsCards({ onCardClick }) {
 
     const fetchStats = async () => {
         try {
-            const response = await fetch("http://192.168.1.31:8000/api/admin_home/");
+            const response = await fetch("http://192.168.1.28:8000/api/admin_home/");
             const result = await response.json();
 
             if(response.ok && result?.data){

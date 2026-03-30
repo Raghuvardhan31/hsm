@@ -253,3 +253,9 @@ class TenantBeds(models.Model):
 
     def __str__(self):
         return self.name
+
+class SuspensionReason(models.Model):
+    email = models.EmailField(unique=True)
+    reason = models.TextField()     
+    def __str__(self):
+        return self.email
