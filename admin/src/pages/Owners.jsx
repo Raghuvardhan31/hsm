@@ -14,6 +14,8 @@ function Owners() {
   const [selectedReason, setSelectedReason] = useState("");
   const [customReason, setCustomReason] = useState("");
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+  const [showReasonViewModal, setShowReasonViewModal] = useState(false);
+  const [reasonData, setReasonData] = useState({ email: "", reason: "" });
 
   const predefinedReasons = [
     "Some required documents are missing. Complete your submission.",
@@ -141,7 +143,8 @@ function Owners() {
         return;
       }
 
-      alert(`Email: ${result.email}\nReason: ${result.reason}`);
+      setReasonData({ email: result.email, reason: result.reason });
+      setShowReasonViewModal(true);
     } catch (err) {
       console.error("Fetch reason error:", err);
       alert("Server not reachable");
@@ -175,31 +178,34 @@ function Owners() {
     }
 
     if (!selectedReason || (selectedReason === "Other" && !customReason.trim())) {
-      alert("Please select or enter a reason for suspension");
+      console.log("Please select or enter a reason for suspension");
       return;
     }
 
     const finalReason =
       selectedReason === "Other" ? customReason.trim() : selectedReason;
 
-    alert(`Email: ${suspendingOwner.email}\nReason: ${finalReason}`);
+    // Store necessary owner info before clearing state
+    const ownerEmail = suspendingOwner.email;
 
-    const reasonSaved = await saveSuspendReason(suspendingOwner.email, finalReason);
-    if (!reasonSaved) return;
-
-    const statusUpdated = await updateOwnerStatus(
-      suspendingOwner.email,
-      "suspend",
-      finalReason
-    );
-    if (!statusUpdated) return;
-
+    // Close modal and clear state immediately
     setShowSuspendModal(false);
-    setSuspendingOwner(null);
     setSelectedReason("");
     setCustomReason("");
-    setShowSuccessPopup(true);
+    setSuspendingOwner(null);
 
+    // Show confirmation alert
+    console.log(`Email: ${ownerEmail}\nReason: ${finalReason}`);
+
+    // Perform background updates
+    const reasonSaved = await saveSuspendReason(ownerEmail, finalReason);
+    if (!reasonSaved) return;
+
+    const statusUpdated = await updateOwnerStatus(ownerEmail, "suspend", finalReason);
+    if (!statusUpdated) return;
+
+    // Show success toast
+    setShowSuccessPopup(true);
     setTimeout(() => {
       setShowSuccessPopup(false);
     }, 3000);
@@ -306,34 +312,28 @@ function Owners() {
 
                       <td style={tdStyle}>
                         <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                          <button
-                            style={
-                              owner.status.toLowerCase() === "active"
-                                ? disabledBtn
-                                : approveBtn
-                            }
-                            onClick={async () => {
-                              const ok = await updateOwnerStatus(owner.email, "active");
-                              if (ok) {
-                                alert(`Email: ${owner.email}\nStatus: active`);
-                              }
-                            }}
-                            disabled={owner.status.toLowerCase() === "active"}
-                          >
-                            Approve
-                          </button>
+                          {owner.status.toLowerCase() !== "active" && (
+                            <button
+                              style={approveBtn}
+                              onClick={async () => {
+                                const ok = await updateOwnerStatus(owner.email, "active");
+                                if (ok) {
+                                  console.log(`Email: ${owner.email}\nStatus: active`);
+                                }
+                              }}
+                            >
+                              Approve
+                            </button>
+                          )}
 
-                          <button
-                            style={
-                              owner.status.toLowerCase() === "suspend"
-                                ? disabledBtn
-                                : suspendBtn
-                            }
-                            onClick={() => handleSuspendClick(owner)}
-                            disabled={owner.status.toLowerCase() === "suspend"}
-                          >
-                            Suspend
-                          </button>
+                          {owner.status.toLowerCase() !== "suspend" && (
+                            <button
+                              style={suspendBtn}
+                              onClick={() => handleSuspendClick(owner)}
+                            >
+                              Suspend
+                            </button>
+                          )}
 
                           {owner.status.toLowerCase() === "suspend" && (
                             <button
@@ -425,6 +425,71 @@ function Owners() {
                 </button>
                 <button onClick={handleSuspendSubmit} style={submitSuspendBtnStyle}>
                   Submit
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showReasonViewModal && (
+          <div style={modalOverlayStyle}>
+            <div style={suspendModalContentStyle}>
+              <div style={suspendModalHeaderStyle}>
+                <h3 style={{ margin: 0, color: "#111827" }}>Suspension Reason</h3>
+                <button
+                  onClick={() => setShowReasonViewModal(false)}
+                  style={closeBtnStyle}
+                >
+                  ×
+                </button>
+              </div>
+
+              <div style={suspendModalBodyStyle}>
+                <div style={{ marginBottom: "16px" }}>
+                  <p
+                    style={{
+                      fontWeight: "600",
+                      fontSize: "14px",
+                      color: "#6b7280",
+                      margin: "0 0 4px 0",
+                    }}
+                  >
+                    Owner Email:
+                  </p>
+                  <p style={{ fontSize: "16px", color: "#111827", margin: 0 }}>
+                    {reasonData.email}
+                  </p>
+                </div>
+                <div>
+                  <p
+                    style={{
+                      fontWeight: "600",
+                      fontSize: "14px",
+                      color: "#6b7280",
+                      margin: "0 0 4px 0",
+                    }}
+                  >
+                    Reason:
+                  </p>
+                  <p
+                    style={{
+                      fontSize: "16px",
+                      color: "#111827",
+                      margin: 0,
+                      lineHeight: "1.5",
+                    }}
+                  >
+                    {reasonData.reason}
+                  </p>
+                </div>
+              </div>
+
+              <div style={suspendModalFooterStyle}>
+                <button
+                  onClick={() => setShowReasonViewModal(false)}
+                  style={cancelBtnStyle}
+                >
+                  Close
                 </button>
               </div>
             </div>
