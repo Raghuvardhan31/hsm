@@ -42,7 +42,7 @@ function Owners() {
           name: item.owner_name || "No Name",
           phone: item.phone || "N/A",
           email: item.email || "N/A",
-          property: item.property_name || "Property",
+          property: item.properties, //item.properties 
           status: item.status || "pending",
           reason: item.reason || item.suspension_reason || "",
         }));

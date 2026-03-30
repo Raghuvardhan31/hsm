@@ -499,19 +499,28 @@ def get_tenantsbeds(request):
         },
         status=status.HTTP_200_OK
     )
+
+
 @api_view(['GET'])
 def owner_admin_list(request):
     owners = Owners.objects.all().order_by('-id')
 
     data = []
+
     for owner in owners:
+        # Count only ACTIVE properties for same phone
+        active_properties_count = Owners.objects.filter(
+            phone=owner.phone,
+            status='active'
+        ).count()
+
         data.append({
             "id": owner.id,
             "owner_name": owner.name,
             "phone": owner.phone,
             "email": owner.email,
-            "properties": 1,
-            "status": owner.status
+            "properties": active_properties_count if active_properties_count > 0 else 0,
+            "status": owner.status,
         })
 
     return Response(
@@ -521,7 +530,6 @@ def owner_admin_list(request):
         },
         status=status.HTTP_200_OK
     )
-
 
 
 @api_view(['GET'])
