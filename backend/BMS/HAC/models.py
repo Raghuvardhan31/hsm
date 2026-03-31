@@ -259,3 +259,4 @@ class SuspensionReason(models.Model):
     reason = models.TextField()     
     def __str__(self):
         return self.email
+    

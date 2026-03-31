@@ -34,142 +34,400 @@ from .serializers import (
 )
 
 
+# @api_view(['POST'])
+# @transaction.atomic
+# def register_owner(request):
+#     print("Request Data:", request.data)
+#     print("Request Files:", request.FILES)
+
+#     stay_type = request.data.get("stayType")
+
+#     if stay_type not in ["hostel", "apartment", "commercial"]:
+#         return Response({"error": "Invalid stayType"}, status=status.HTTP_400_BAD_REQUEST)
+
+#     # 1️⃣ OWNER
+#     owner_serializer = OwnerRegistrationSerializer(data=request.data)
+#     if not owner_serializer.is_valid():
+#         transaction.set_rollback(True)
+#         return Response(owner_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+#     owner = owner_serializer.save(status='pending')
+
+#     # 2️⃣ FACILITIES
+#     FACILITY_FIELDS = [
+#         "wifi",
+#         "parking",
+#         "food",
+#         "lift",
+#         "power_backup",
+#         "security",
+#         "play_area",
+#         "mess",
+#         "laundry",
+#         "water",
+#         "ac",
+#         "non_ac",
+#     ]
+
+#     facilities = [
+#         field for field in FACILITY_FIELDS
+#         if str(request.data.get(field)).lower() == "true"
+#     ]
+
+#     # 3️⃣ SAVE MULTIPLE GALLERY IMAGES
+#     uploaded_gallery_files = request.FILES.getlist("gallery_images")
+#     gallery_file_paths = []
+
+#     for file in uploaded_gallery_files:
+#         saved_path = default_storage.save(f"property_gallery/{file.name}", file)
+#         gallery_file_paths.append(saved_path)
+
+#     # 4️⃣ PROPERTY DATA
+#     property_data = request.data.dict()
+#     property_data.pop("facilities", None)
+#     property_data.pop("gallery_images", None)
+
+#     property_data["owner"] = owner.id
+#     property_data["facilities"] = facilities
+#     property_data["gallery_images"] = gallery_file_paths
+
+#     if stay_type == "hostel":
+#         serializer = HostelSerializer(data=property_data)
+#     elif stay_type == "apartment":
+#         serializer = ApartmentSerializer(data=property_data)
+#     else:
+#         serializer = CommercialSerializer(data=property_data)
+
+#     if not serializer.is_valid():
+#         transaction.set_rollback(True)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+#     property_obj = serializer.save()
+
+#     # 5️⃣ BANK
+#     bank_data = request.data.copy()
+#     bank_data["owner"] = owner.id
+
+#     bank_serializer = BankSerializer(data=bank_data)
+#     if not bank_serializer.is_valid():
+#         transaction.set_rollback(True)
+#         return Response(bank_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+#     bank_serializer.save()
+
+#     # 6️⃣ FLOORS
+#     building_layout = request.data.get("building_layout")
+
+#     if building_layout:
+#         try:
+#             layout = json.loads(building_layout)
+#         except json.JSONDecodeError:
+#             transaction.set_rollback(True)
+#             return Response(
+#                 {"error": "Invalid building_layout JSON"},
+#                 status=status.HTTP_400_BAD_REQUEST
+#             )
+
+#         for floor_data in layout:
+#             floor_no = floor_data.get("floorNo")
+
+#             if stay_type == "hostel":
+#                 for room in floor_data.get("rooms", []):
+#                     HostelFloorRoom.objects.create(
+#                         owner=owner,
+#                         hostel=property_obj,
+#                         floor=floor_no,
+#                         roomNo=room.get("roomNo"),
+#                         sharing=room.get("beds")
+#                     )
+
+#             elif stay_type == "apartment":
+#                 for flat in floor_data.get("flats", []):
+#                     ApartmentFloorUnit.objects.create(
+#                         owner=owner,
+#                         apartment=property_obj,
+#                         floor=floor_no,
+#                         flatNo=flat.get("flatNo"),
+#                         bhk=flat.get("bhk")
+#                     )
+
+#             elif stay_type == "commercial":
+#                 for section in floor_data.get("sections", []):
+#                     CommercialFloor.objects.create(
+#                         owner=owner,
+#                         commercial_property=property_obj,
+#                         floorNo=floor_no,
+#                         sectionNo=section.get("sectionNo"),
+#                         area_sqft=section.get("area")
+#                     )
+
+#     return Response(
+#         {
+#             "message": "Registration successful. Wait for approval (2 days)",
+#             "status": owner.status,
+#             "created_at": owner.created_at,
+#             "email": owner.email
+#         },
+#         status=status.HTTP_201_CREATED
+#     )
+
+
 @api_view(['POST'])
+
 @transaction.atomic
+
 def register_owner(request):
+
     print("Request Data:", request.data)
+
     print("Request Files:", request.FILES)
-
+ 
     stay_type = request.data.get("stayType")
-
+ 
     if stay_type not in ["hostel", "apartment", "commercial"]:
+
         return Response({"error": "Invalid stayType"}, status=status.HTTP_400_BAD_REQUEST)
+ 
+    # 🔥 ✅ STEP 0: CHECK EXISTING EMAIL
 
+    email = request.data.get("email")
+ 
+    existing_owner = Owners.objects.filter(email=email).first()
+ 
+    if existing_owner:
+
+        if existing_owner.status == "active":
+
+            return Response({
+
+                "error": "Account already exists and active"
+
+            }, status=400)
+ 
+        elif existing_owner.status == "pending":
+
+            return Response({
+
+                "error": "Your account is still under review"
+
+            }, status=400)
+ 
+        elif existing_owner.status == "suspend":
+
+            # ✅ DELETE OLD RECORD (IMPORTANT)
+
+            existing_owner.delete()
+ 
     # 1️⃣ OWNER
+
     owner_serializer = OwnerRegistrationSerializer(data=request.data)
+
     if not owner_serializer.is_valid():
+
         transaction.set_rollback(True)
+
         return Response(owner_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+ 
     owner = owner_serializer.save(status='pending')
-
+ 
     # 2️⃣ FACILITIES
+
     FACILITY_FIELDS = [
+
         "wifi",
+
         "parking",
+
         "food",
+
         "lift",
+
         "power_backup",
+
         "security",
+
         "play_area",
+
         "mess",
+
         "laundry",
+
         "water",
+
         "ac",
+
         "non_ac",
-    ]
 
+    ]
+ 
     facilities = [
+
         field for field in FACILITY_FIELDS
+
         if str(request.data.get(field)).lower() == "true"
+
     ]
-
+ 
     # 3️⃣ SAVE MULTIPLE GALLERY IMAGES
+
     uploaded_gallery_files = request.FILES.getlist("gallery_images")
+
     gallery_file_paths = []
-
+ 
     for file in uploaded_gallery_files:
+
         saved_path = default_storage.save(f"property_gallery/{file.name}", file)
+
         gallery_file_paths.append(saved_path)
-
+ 
     # 4️⃣ PROPERTY DATA
+
     property_data = request.data.dict()
+
     property_data.pop("facilities", None)
+
     property_data.pop("gallery_images", None)
-
+ 
     property_data["owner"] = owner.id
+
     property_data["facilities"] = facilities
+
     property_data["gallery_images"] = gallery_file_paths
-
+ 
     if stay_type == "hostel":
+
         serializer = HostelSerializer(data=property_data)
+
     elif stay_type == "apartment":
+
         serializer = ApartmentSerializer(data=property_data)
+
     else:
+
         serializer = CommercialSerializer(data=property_data)
-
+ 
     if not serializer.is_valid():
+
         transaction.set_rollback(True)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+ 
     property_obj = serializer.save()
-
+ 
     # 5️⃣ BANK
+
     bank_data = request.data.copy()
+
     bank_data["owner"] = owner.id
-
+ 
     bank_serializer = BankSerializer(data=bank_data)
+
     if not bank_serializer.is_valid():
+
         transaction.set_rollback(True)
+
         return Response(bank_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+ 
     bank_serializer.save()
-
+ 
     # 6️⃣ FLOORS
+
     building_layout = request.data.get("building_layout")
-
+ 
     if building_layout:
+
         try:
+
             layout = json.loads(building_layout)
+
         except json.JSONDecodeError:
+
             transaction.set_rollback(True)
+
             return Response(
+
                 {"error": "Invalid building_layout JSON"},
+
                 status=status.HTTP_400_BAD_REQUEST
+
             )
-
+ 
         for floor_data in layout:
+
             floor_no = floor_data.get("floorNo")
-
+ 
             if stay_type == "hostel":
+
                 for room in floor_data.get("rooms", []):
+
                     HostelFloorRoom.objects.create(
+
                         owner=owner,
+
                         hostel=property_obj,
+
                         floor=floor_no,
+
                         roomNo=room.get("roomNo"),
+
                         sharing=room.get("beds")
-                    )
 
+                    )
+ 
             elif stay_type == "apartment":
+
                 for flat in floor_data.get("flats", []):
+
                     ApartmentFloorUnit.objects.create(
+
                         owner=owner,
+
                         apartment=property_obj,
+
                         floor=floor_no,
+
                         flatNo=flat.get("flatNo"),
+
                         bhk=flat.get("bhk")
-                    )
 
+                    )
+ 
             elif stay_type == "commercial":
-                for section in floor_data.get("sections", []):
-                    CommercialFloor.objects.create(
-                        owner=owner,
-                        commercial_property=property_obj,
-                        floorNo=floor_no,
-                        sectionNo=section.get("sectionNo"),
-                        area_sqft=section.get("area")
-                    )
 
+                for section in floor_data.get("sections", []):
+
+                    CommercialFloor.objects.create(
+
+                        owner=owner,
+
+                        commercial_property=property_obj,
+
+                        floorNo=floor_no,
+
+                        sectionNo=section.get("sectionNo"),
+
+                        area_sqft=section.get("area")
+
+                    )
+ 
     return Response(
+
         {
+
             "message": "Registration successful. Wait for approval (2 days)",
+
             "status": owner.status,
+
             "created_at": owner.created_at,
+
             "email": owner.email
+
         },
+
         status=status.HTTP_201_CREATED
+
     )
+ 
 
 
 @api_view(['POST'])
@@ -705,37 +963,34 @@ def get_owner_full_details(request, email):
     }
 
     return Response(response_data, status=status.HTTP_200_OK)
-
 @api_view(['PATCH'])
 def update_owner_status(request, email):
     try:
         owner = Owners.objects.get(email=email)
     except Owners.DoesNotExist:
         return Response({"error": "Owner not found"}, status=404)
-
+ 
     new_status = request.data.get("status")
-
+ 
     if not new_status:
         return Response({"error": "Status required"}, status=400)
-
+ 
     allowed_statuses = ["active", "pending", "suspend"]
-
+ 
     if new_status not in allowed_statuses:
         return Response({
             "error": "Invalid status",
             "allowed": allowed_statuses
         }, status=400)
-
+ 
     owner.status = new_status
     owner.save()
-
+ 
     return Response({
         "message": "Status updated",
         "email": owner.email,
         "status": owner.status
     })
-
-
 
 from datetime import timedelta
 from django.utils.timezone import now
@@ -968,19 +1223,21 @@ def suspension_reason_view(request):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
+
 @api_view(['GET'])
-def get_reason_by_email(request, email):   # ✅ ADD email here
+def reason_by_email(request, email):
     try:
         obj = SuspensionReason.objects.get(email=email)
-        serializer = SuspensionReasonSerializer(obj)
 
-        return Response({
-            "email": serializer.data["email"],
-            "reason": serializer.data["reason"]
-        })
-
+        # ✅ GET → return reason
+        if request.method == 'GET':
+            return Response({
+                "email": obj.email,
+                "reason": obj.reason
+            }, status=status.HTTP_200_OK)
+        
     except SuspensionReason.DoesNotExist:
         return Response(
             {"error": "No reason found"},
-            status=404
+            status=status.HTTP_404_NOT_FOUND
         )

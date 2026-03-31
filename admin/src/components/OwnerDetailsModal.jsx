@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { FaEye } from "react-icons/fa";
 
 function OwnerDetailsModal({ email, onClose }) {
   const [ownerDetails, setOwnerDetails] = useState(null);
@@ -70,13 +71,23 @@ function OwnerDetailsModal({ email, onClose }) {
             </div>
           ))}
 
-        {type === "commercial" &&
-          floor.sections?.map((section, i) => (
-            <div key={i} style={itemRowStyle}>
-              <span>Section No: {section.sectionNo}</span>
-              <span>{section.area_sqft} sqft</span>
-            </div>
-          ))}
+        {type === "commercial" && (
+          <div style={itemRowStyle}>
+            {floor.area ? (
+              <>
+                <span>Total Area</span>
+                <span>{floor.area} sqft</span>
+              </>
+            ) : (
+              floor.sections?.map((section, i) => (
+                <div key={i} style={{ display: "flex", justifyContent: "space-between", width: "100%" }}>
+                  <span>Section {section.sectionNo}</span>
+                  <span>{section.area_sqft} sqft</span>
+                </div>
+              ))
+            )}
+          </div>
+        )}
       </div>
     ));
   };
@@ -192,12 +203,23 @@ function OwnerDetailsModal({ email, onClose }) {
                 </div>
 
                 {ownerDetails.step1?.owner_img_field && (
-                  <img
-                    src={ownerDetails.step1.owner_img_field}
-                    alt="Owner"
-                    style={{ ...ownerImageStyle, cursor: "pointer" }}
-                    onClick={() => setSelectedImage(ownerDetails.step1.owner_img_field)}
-                  />
+                  <div style={{ position: "relative" }}>
+                    <img
+                      src={ownerDetails.step1.owner_img_field}
+                      alt="Owner"
+                      style={{ ...ownerImageStyle, cursor: "pointer" }}
+                      onClick={() => setSelectedImage(ownerDetails.step1.owner_img_field)}
+                    />
+                    <div 
+                      style={cornerEyeIcon}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedImage(ownerDetails.step1.owner_img_field);
+                      }}
+                    >
+                      <FaEye size={12} />
+                    </div>
+                  </div>
                 )}
               </div>
 
@@ -260,12 +282,24 @@ function OwnerDetailsModal({ email, onClose }) {
 
                   {propertyDetails?.owner_ship_proof && (
                     <div style={{ marginTop: "16px" }}>
-                      <button
-                        onClick={() => setSelectedImage(propertyDetails.owner_ship_proof)}
-                        style={{ ...linkStyle, background: "none", border: "none", padding: 0, cursor: "pointer", fontSize: "14px" }}
-                      >
-                        View Ownership Proof
-                      </button>
+                      <label style={smallLabel}>Ownership Proof</label>
+                      <div style={{ position: "relative", width: "100px", marginTop: "8px" }}>
+                        <img
+                          src={propertyDetails.owner_ship_proof}
+                          alt="Ownership Proof"
+                          style={{ ...galleryImage, cursor: "pointer" }}
+                          onClick={() => setSelectedImage(propertyDetails.owner_ship_proof)}
+                        />
+                        <div 
+                          style={cornerEyeIcon}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedImage(propertyDetails.owner_ship_proof);
+                          }}
+                        >
+                          <FaEye size={12} />
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -282,13 +316,23 @@ function OwnerDetailsModal({ email, onClose }) {
                   {galleryImages.length > 0 ? (
                     <div style={galleryGrid}>
                       {galleryImages.map((img, index) => (
-                        <img
-                          key={index}
-                          src={img}
-                          alt={`Gallery ${index + 1}`}
-                          style={{ ...galleryImage, cursor: "pointer" }}
-                          onClick={() => setSelectedImage(img)}
-                        />
+                        <div key={index} style={{ position: "relative" }}>
+                          <img
+                            src={img}
+                            alt={`Gallery ${index + 1}`}
+                            style={{ ...galleryImage, cursor: "pointer" }}
+                            onClick={() => setSelectedImage(img)}
+                          />
+                          <div 
+                            style={cornerEyeIcon}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedImage(img);
+                            }}
+                          >
+                            <FaEye size={12} />
+                          </div>
+                        </div>
                       ))}
                     </div>
                   ) : (
@@ -423,6 +467,24 @@ const ownerImageStyle = {
   borderRadius: "14px",
   objectFit: "cover",
   border: "2px solid #e5e7eb",
+  display: "block"
+};
+
+const cornerEyeIcon = {
+  position: "absolute",
+  top: "6px",
+  right: "6px",
+  background: "rgba(255, 255, 255, 0.8)",
+  color: "#4f46e5",
+  width: "24px",
+  height: "24px",
+  borderRadius: "50%",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
+  cursor: "pointer",
+  zIndex: 10
 };
 
 const gridStyle = {

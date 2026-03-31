@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { FaEye, FaCheck, FaUserSlash, FaCommentDots } from "react-icons/fa";
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 import OwnerDetailsModal from "../components/OwnerDetailsModal";
@@ -273,7 +274,7 @@ function Owners() {
                   <th style={thStyle}>Email</th>
                   <th style={thStyle}>Property</th>
                   <th style={thStyle}>Status</th>
-                  <th style={thStyle}>Actions</th>
+                  <th style={{ ...thStyle, textAlign: "right" }}>Actions</th>
                 </tr>
               </thead>
 
@@ -310,11 +311,12 @@ function Owners() {
                         </span>
                       </td>
 
-                      <td style={tdStyle}>
-                        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                       <td style={{ ...tdStyle, textAlign: "right" }}>
+                        <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end", flexWrap: "wrap" }}>
                           {owner.status.toLowerCase() !== "active" && (
                             <button
                               style={approveBtn}
+                              title="Approve"
                               onClick={async () => {
                                 const ok = await updateOwnerStatus(owner.email, "active");
                                 if (ok) {
@@ -322,33 +324,36 @@ function Owners() {
                                 }
                               }}
                             >
-                              Approve
+                              <FaCheck size={16} />
                             </button>
                           )}
 
                           {owner.status.toLowerCase() !== "suspend" && (
                             <button
                               style={suspendBtn}
+                              title="Suspend"
                               onClick={() => handleSuspendClick(owner)}
                             >
-                              Suspend
+                              <FaUserSlash size={16} />
                             </button>
                           )}
 
                           {owner.status.toLowerCase() === "suspend" && (
                             <button
                               style={reasonBtn}
+                              title="View Suspension Reason"
                               onClick={() => fetchSuspensionReason(owner.email)}
                             >
-                              Reason
+                              <FaCommentDots size={16} />
                             </button>
                           )}
 
                           <button
                             style={viewBtn}
                             onClick={() => setSelectedEmail(owner.email)}
+                            title="View Details"
                           >
-                            View
+                            <FaEye size={16} />
                           </button>
                         </div>
                       </td>
@@ -649,54 +654,73 @@ const avatarStyle = {
 };
 
 const approveBtn = {
-  background: "#16a34a",
-  color: "#fff",
+  background: "#DCFCE7",
+  color: "#15803D",
   border: "none",
-  padding: "8px 12px",
-  borderRadius: "8px",
+  width: "32px",
+  height: "32px",
+  borderRadius: "50%",
   cursor: "pointer",
-  fontWeight: "600",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  transition: "all 0.2s",
 };
 
 const suspendBtn = {
-  background: "#dc2626",
-  color: "#fff",
+  background: "#FEE2E2",
+  color: "#B91C1C",
   border: "none",
-  padding: "8px 12px",
-  borderRadius: "8px",
+  width: "32px",
+  height: "32px",
+  borderRadius: "50%",
   cursor: "pointer",
-  fontWeight: "600",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  transition: "all 0.2s",
 };
 
 const disabledBtn = {
-  background: "#9ca3af",
-  color: "#fff",
+  background: "#F3F4F6",
+  color: "#9CA3AF",
   border: "none",
-  padding: "8px 12px",
-  borderRadius: "8px",
+  width: "32px",
+  height: "32px",
+  borderRadius: "50%",
   cursor: "not-allowed",
-  fontWeight: "600",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
   opacity: 0.6,
 };
 
 const viewBtn = {
-  background: "#2563eb",
-  color: "#fff",
+  background: "#F3E8FF",
+  color: "#7E22CE",
   border: "none",
-  padding: "8px 12px",
-  borderRadius: "8px",
+  width: "32px",
+  height: "32px",
+  borderRadius: "50%",
   cursor: "pointer",
-  fontWeight: "600",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  transition: "all 0.2s",
 };
 
 const reasonBtn = {
-  background: "#f59e0b",
-  color: "#fff",
+  background: "#FEF3C7",
+  color: "#B45309",
   border: "none",
-  padding: "8px 12px",
-  borderRadius: "8px",
+  width: "32px",
+  height: "32px",
+  borderRadius: "50%",
   cursor: "pointer",
-  fontWeight: "600",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  transition: "all 0.2s",
 };
 
 const filterContainer = {
