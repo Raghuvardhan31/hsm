@@ -969,28 +969,42 @@ def update_owner_status(request, email):
         owner = Owners.objects.get(email=email)
     except Owners.DoesNotExist:
         return Response({"error": "Owner not found"}, status=404)
- 
+
     new_status = request.data.get("status")
- 
+
     if not new_status:
         return Response({"error": "Status required"}, status=400)
- 
+
     allowed_statuses = ["active", "pending", "suspend"]
- 
+
     if new_status not in allowed_statuses:
         return Response({
             "error": "Invalid status",
             "allowed": allowed_statuses
         }, status=400)
- 
+
+    if new_status == "suspend":
+        owner_email = owner.email
+
+        # delete only owner data
+        owner.delete()
+
+        # DO NOT delete suspension reason
+        return Response({
+            "message": "Owner deleted successfully, suspension reason kept",
+            "email": owner_email,
+            "status": "deleted"
+        }, status=200)
+
     owner.status = new_status
     owner.save()
- 
+
     return Response({
         "message": "Status updated",
         "email": owner.email,
         "status": owner.status
-    })
+    }, status=200)
+
 
 from datetime import timedelta
 from django.utils.timezone import now
