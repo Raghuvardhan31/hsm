@@ -787,6 +787,7 @@ def owner_admin_list(request):
             "email": owner.email,
             "property_type": property_type,
             "status": owner.status,
+            "date" : owner.created_at,
         })
 
     return Response(

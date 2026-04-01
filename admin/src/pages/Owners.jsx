@@ -38,6 +38,28 @@ function Owners() {
     }
   }, [location.state]);
 
+  const formatDateTime = (dateString) => {
+    if (!dateString) return "N/A";
+
+    const date = new Date(dateString);
+
+    if (isNaN(date.getTime())) return "N/A";
+
+    const datePart = date.toLocaleDateString("en-IN", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+
+    const timePart = date.toLocaleTimeString("en-IN", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+
+    return `${datePart} - ${timePart}`;
+  };
+
   const fetchOwners = async () => {
     try {
       setLoading(true);
@@ -55,6 +77,7 @@ function Owners() {
           property: item.property_type || "N/A",
           status: item.status || "pending",
           reason: item.reason || item.suspension_reason || "",
+          date_time: formatDateTime(item.date || item.created_at),
         }));
 
         setOwners(formattedData);
@@ -195,26 +218,21 @@ function Owners() {
     const finalReason =
       selectedReason === "Other" ? customReason.trim() : selectedReason;
 
-    // Store necessary owner info before clearing state
     const ownerEmail = suspendingOwner.email;
 
-    // Close modal and clear state immediately
     setShowSuspendModal(false);
     setSelectedReason("");
     setCustomReason("");
     setSuspendingOwner(null);
 
-    // Show confirmation alert
     console.log(`Email: ${ownerEmail}\nReason: ${finalReason}`);
 
-    // Perform background updates
     const reasonSaved = await saveSuspendReason(ownerEmail, finalReason);
     if (!reasonSaved) return;
 
     const statusUpdated = await updateOwnerStatus(ownerEmail, "suspend", finalReason);
     if (!statusUpdated) return;
 
-    // Show success toast
     setShowSuccessPopup(true);
     setTimeout(() => {
       setShowSuccessPopup(false);
@@ -283,6 +301,7 @@ function Owners() {
                   <th style={thStyle}>Email</th>
                   <th style={thStyle}>Property</th>
                   <th style={thStyle}>Status</th>
+                  <th style={thStyle}>Date & Time</th>
                   <th style={{ ...thStyle, textAlign: "right" }}>Actions</th>
                 </tr>
               </thead>
@@ -320,8 +339,17 @@ function Owners() {
                         </span>
                       </td>
 
-                       <td style={{ ...tdStyle, textAlign: "right" }}>
-                        <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end", flexWrap: "wrap" }}>
+                      <td style={tdStyle}>{owner.date_time}</td>
+
+                      <td style={{ ...tdStyle, textAlign: "right" }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: "8px",
+                            justifyContent: "flex-end",
+                            flexWrap: "wrap",
+                          }}
+                        >
                           {owner.status.toLowerCase() !== "active" && (
                             <button
                               style={approveBtn}
@@ -370,7 +398,7 @@ function Owners() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="6" style={{ textAlign: "center", padding: "20px" }}>
+                    <td colSpan="7" style={{ textAlign: "center", padding: "20px" }}>
                       No owners found
                     </td>
                   </tr>
@@ -688,20 +716,6 @@ const suspendBtn = {
   alignItems: "center",
   justifyContent: "center",
   transition: "all 0.2s",
-};
-
-const disabledBtn = {
-  background: "#F3F4F6",
-  color: "#9CA3AF",
-  border: "none",
-  width: "32px",
-  height: "32px",
-  borderRadius: "50%",
-  cursor: "not-allowed",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  opacity: 0.6,
 };
 
 const viewBtn = {
