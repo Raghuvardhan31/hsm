@@ -1,23 +1,85 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  TouchableOpacity,
+  Alert,
+} from "react-native";
 
-export default function WaitingScreen({ navigation }) {
+export default function WaitingScreen({ navigation, route }) {
+  const email = route?.params?.email || "";
   const [timeLeft, setTimeLeft] = useState(0);
   const [reason, setReason] = useState("");
-  const email = global.ownerEmail;
-    
+  const [loading, setLoading] = useState(true);
+
+  const removeReason = async () => {
+    try {
+      if (!email) return false;
+
+      const res = await fetch(
+        `http://192.168.1.43:8000/api/get_suspension_reason/${email}/`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      let data = {};
+      try {
+        data = await res.json();
+      } catch {
+        data = {};
+      }
+
+      if (res.ok) {
+        console.log("Reason deleted:", data);
+        return true;
+      } else {
+        console.log("Delete failed:", data);
+        return false;
+      }
+    } catch (err) {
+      console.log("Delete error:", err);
+      return false;
+    }
+  };
+
+  const handleReRegister = async () => {
+    const deleted = await removeReason();
+
+    if (deleted) {
+      navigation.replace("OwnerRegistrationScreen");
+    } else {
+      Alert.alert("Error", "Failed to delete suspension reason");
+    }
+  };
+
   const fetchReason = async () => {
     try {
       if (!email) return;
 
       const res = await fetch(
-        `http://192.168.1.28:8000/api/get_suspension_reason/${email}/`
+        `http://192.168.1.43:8000/api/get_suspension_reason/${email}/`
       );
 
-      const data = await res.json();
-      setReason(data.reason || "");
+      let data = {};
+      try {
+        data = await res.json();
+      } catch {
+        data = {};
+      }
+
+      console.log("Reason API response:", data);
+
+      if (res.ok) {
+        setReason(data.reason || "");
+      } else {
+        setReason("");
+      }
     } catch (err) {
-      console.log(err);
+      console.log("fetchReason error:", err);
+      setReason("");
     }
   };
 
@@ -26,32 +88,48 @@ export default function WaitingScreen({ navigation }) {
       if (!email) return;
 
       const res = await fetch(
-        `http://192.168.1.28:8000/api/check-owner-status/${email}/`
+        `http://192.168.1.43:8000/api/check-owner-status/${email}/`
       );
 
-      const data = await res.json();
+      let data = {};
+      try {
+        data = await res.json();
+      } catch {
+        data = {};
+      }
+
+      console.log("Status API response:", data);
 
       if (data.status === "active") {
         navigation.replace("OwnerLoginScreen");
-      } else {
-        setTimeLeft(Number(data.time_left_seconds) || 0);
+        return;
       }
+
+      setTimeLeft(Number(data.time_left_seconds) || 0);
     } catch (err) {
-      console.log(err);
+      console.log("fetchStatus error:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
+    if (!email) {
+      Alert.alert("Error", "Email not found");
+      setLoading(false);
+      return;
+    }
+
     fetchStatus();
     fetchReason();
 
-    const interval = setInterval(() => {
+    const statusInterval = setInterval(() => {
       fetchStatus();
       fetchReason();
     }, 10000);
 
-    return () => clearInterval(interval);
-  }, []);
+    return () => clearInterval(statusInterval);
+  }, [email]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -65,15 +143,26 @@ export default function WaitingScreen({ navigation }) {
   const minutes = Math.floor((timeLeft % 3600) / 60);
   const seconds = timeLeft % 60;
 
+  const formatTime = (value) => String(value).padStart(2, "0");
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.title}>Loading...</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       {reason ? (
         <View style={styles.reasonContainer}>
           <Text style={styles.title}>Account Suspended</Text>
           <Text style={styles.reasonText}>Reason: {reason}</Text>
+
           <TouchableOpacity
             style={styles.reRegisterButton}
-            onPress={() => navigation.replace("OwnerRegistrationScreen")}
+            onPress={handleReRegister}
           >
             <Text style={styles.reRegisterButtonText}>Re-Register</Text>
           </TouchableOpacity>
@@ -83,6 +172,7 @@ export default function WaitingScreen({ navigation }) {
           <Image
             source={require("../../../assets/images/hourglass.png")}
             style={styles.image}
+            resizeMode="contain"
           />
 
           <Text style={styles.title}>Account Under Review</Text>
@@ -92,7 +182,7 @@ export default function WaitingScreen({ navigation }) {
           </Text>
 
           <Text style={styles.timer}>
-            {hours}h : {minutes}m : {seconds}s
+            {formatTime(hours)}h : {formatTime(minutes)}m : {formatTime(seconds)}s
           </Text>
         </>
       )}
@@ -106,6 +196,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#ffffff",
+    paddingHorizontal: 20,
   },
   image: {
     width: 160,
@@ -116,17 +207,20 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: "bold",
     color: "#000",
+    textAlign: "center",
   },
   subtitle: {
     marginTop: 10,
     fontSize: 16,
     color: "#131724",
+    textAlign: "center",
   },
   timer: {
     marginTop: 20,
     fontSize: 22,
     color: "#3094c7",
     fontWeight: "bold",
+    textAlign: "center",
   },
   reasonContainer: {
     paddingHorizontal: 20,

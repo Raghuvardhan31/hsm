@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import StatsCards from "../components/StatsCards";
 import ActivityTable from "../components/ActivityTable";
@@ -6,48 +7,12 @@ import ChartsSection from "../components/ChartsSection";
 import Header from "../components/Header";
 
 function Dashboard({ onLogout }) {
-
+    const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState("overview");
 
     const closeModal = () => setActiveTab("overview");
 
     const renderModalContent = () => {
-        if (activeTab === "Total Owners") {
-            return (
-                <div className="tableBox" style={{ marginTop: 0 }}>
-                    <table>
-                        <thead>
-                            <tr className="tableHeader">
-                                <th>Name</th>
-                                <th>Properties</th>
-                                <th>Property Type</th>
-                                <th>Contact</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>James Wilson</td>
-                                <td>Sunrise Apartments</td>
-                                <td>Apartment</td>
-                                <td>james@email.com</td>
-                            </tr>
-                            <tr>
-                                <td>Emily Zhang</td>
-                                <td>Ocean View Villa</td>
-                                <td>Hostel</td>
-                                <td>emily@email.com</td>
-                            </tr>
-                            <tr>
-                                <td>Robert Chen</td>
-                                <td>Metro Loft</td>
-                                <td>Commercial Space</td>
-                                <td>robert@email.com</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            )
-        }
         
         if (activeTab === "Total Tenants") {
             return (
@@ -148,7 +113,15 @@ function Dashboard({ onLogout }) {
 
                 {/* Stats Cards - Horizontal Row */}
                 <StatsCards onCardClick={(title) => {
-                    if (["Total Owners", "Total Tenants", "Total Properties"].includes(title)) {
+                    if (title === "Total Owners") {
+                        navigate("/owners", { state: { filter: "All" } });
+                    } else if (title === "Total Properties") {
+                        navigate("/properties");
+                    } else if (title === "Pending Owners") {
+                        navigate("/owners", { state: { filter: "pending" } });
+                    } else if (title === "Suspended Owners") {
+                        navigate("/owners", { state: { filter: "suspend" } });
+                    } else if (title === "Total Tenants") {
                         setActiveTab(title);
                     }
                 }} />

@@ -766,18 +766,26 @@ def owner_admin_list(request):
     data = []
 
     for owner in owners:
-        # Count only ACTIVE properties for same phone
-        active_properties_count = Owners.objects.filter(
-            phone=owner.phone,
-            status='active'
-        ).count()
+        property_type = None
+
+        # ✅ Check Hostel
+        if owner.stay_details.exists():
+            property_type = 'hostel'
+
+        # ✅ Check Apartment
+        elif owner.apartments.exists():
+            property_type = 'apartment'
+
+        # ✅ Check Commercial
+        elif owner.commercial.exists():
+            property_type = 'commercial'
 
         data.append({
             "id": owner.id,
             "owner_name": owner.name,
             "phone": owner.phone,
             "email": owner.email,
-            "properties": active_properties_count if active_properties_count > 0 else 0,
+            "property_type": property_type,
             "status": owner.status,
         })
 
@@ -788,7 +796,6 @@ def owner_admin_list(request):
         },
         status=status.HTTP_200_OK
     )
-
 
 @api_view(['GET'])
 def get_owner_full_details(request, email):
@@ -1238,7 +1245,7 @@ def suspension_reason_view(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 
-@api_view(['GET'])
+@api_view(['GET', 'DELETE'])
 def reason_by_email(request, email):
     try:
         obj = SuspensionReason.objects.get(email=email)
@@ -1249,7 +1256,15 @@ def reason_by_email(request, email):
                 "email": obj.email,
                 "reason": obj.reason
             }, status=status.HTTP_200_OK)
-        
+
+        # ✅ DELETE → delete reason
+        if request.method == 'DELETE':
+            obj.delete()
+            return Response({
+                "message": "Suspension reason deleted successfully",
+                "email": email
+            }, status=status.HTTP_200_OK)
+
     except SuspensionReason.DoesNotExist:
         return Response(
             {"error": "No reason found"},

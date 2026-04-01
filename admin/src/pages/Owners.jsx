@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { FaEye, FaCheck, FaUserSlash, FaCommentDots } from "react-icons/fa";
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
@@ -25,16 +26,24 @@ function Owners() {
     "Please upload valid ownership proof to proceed.",
   ];
 
+  const location = useLocation();
+
   useEffect(() => {
     fetchOwners();
   }, []);
+
+  useEffect(() => {
+    if (location.state && location.state.filter) {
+      setFilter(location.state.filter);
+    }
+  }, [location.state]);
 
   const fetchOwners = async () => {
     try {
       setLoading(true);
       setError("");
 
-      const response = await fetch("http://192.168.1.28:8000/api/owner-admin/");
+      const response = await fetch("http://192.168.1.43:8000/api/owner-admin/");
       const result = await response.json();
 
       if (response.ok && result?.data) {
@@ -43,7 +52,7 @@ function Owners() {
           name: item.owner_name || "No Name",
           phone: item.phone || "N/A",
           email: item.email || "N/A",
-          property: item.properties, //item.properties 
+          property: item.property_type || "N/A",
           status: item.status || "pending",
           reason: item.reason || item.suspension_reason || "",
         }));
@@ -67,7 +76,7 @@ function Owners() {
 
     try {
       const response = await fetch(
-        `http://192.168.1.28:8000/api/owner-status/${encodeURIComponent(cleanEmail)}/`,
+        `http://192.168.1.43:8000/api/owner-status/${encodeURIComponent(cleanEmail)}/`,
         {
           method: "PATCH",
           headers: {
@@ -105,7 +114,7 @@ function Owners() {
 
   const saveSuspendReason = async (email, reason) => {
     try {
-      const response = await fetch("http://192.168.1.28:8000/api/suspension_reason/", {
+      const response = await fetch("http://192.168.1.43:8000/api/suspension_reason/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -134,7 +143,7 @@ function Owners() {
   const fetchSuspensionReason = async (email) => {
     try {
       const response = await fetch(
-        `http://192.168.1.28:8000/api/get_suspension_reason/${encodeURIComponent(email)}/`
+        `http://192.168.1.43:8000/api/get_suspension_reason/${encodeURIComponent(email)}/`
       );
 
       const result = await response.json();

@@ -837,7 +837,7 @@
 //             }
 
 //             const response = await fetch(
-//               "http://192.168.1.28:8000/api/register/owner/",
+//               "http://192.168.1.43:8000/api/register/owner/",
 //               {
 //                 method: "POST",
 //                 body: formData,
@@ -6062,7 +6062,7 @@
 //             }
 
 //             const response = await fetch(
-//               "http://192.168.1.28:8000/api/register/owner/",
+//               "http://192.168.1.43:8000/api/register/owner/",
 //               {
 //                 method: "POST",
 //                 body: formData,
@@ -11289,7 +11289,7 @@
 //             }
 
 //             const response = await fetch(
-//               "http://192.168.1.28:8000/api/register/owner/",
+//               "http://192.168.1.43:8000/api/register/owner/",
 //               {
 //                 method: "POST",
 //                 body: formData,
@@ -16745,7 +16745,7 @@ const pickDoc = async (key) => {
             }
 
             const response = await fetch(
-              "http://192.168.1.28:8000/api/register/owner/",
+              "http://192.168.1.43:8000/api/register/owner/",
               {
                 method: "POST",
                 body: formData,
