@@ -29,7 +29,7 @@ function Dashboard({ onLogout }) {
                         <tbody>
                             <tr>
                                 <td>Sarah Connor</td>
-                                <td>Sunrise Apartments</td>
+                                <td>Sunrise Apartments bunty</td>
                                 <td>Apartment</td>
                                 <td><span className="status Confirmed">Active</span></td>
                             </tr>
@@ -65,7 +65,7 @@ function Dashboard({ onLogout }) {
                         </thead>
                         <tbody>
                             <tr>
-                                <td>Sunrise Apartments</td>
+                                <td>Sunrise Apartments bunty</td>
                                 <td>123 Main St, NY</td>
                                 <td>Apartment</td>
                                 <td><span className="status Confirmed">Occupied</span></td>
