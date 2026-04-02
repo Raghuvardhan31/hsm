@@ -19,7 +19,7 @@ export default function WaitingScreen({ navigation, route }) {
       if (!email) return false;
 
       const res = await fetch(
-        `http://192.168.1.43:8000/api/get_suspension_reason/${email}/`,
+        `http://192.168.1.28:8000/api/get_suspension_reason/${email}/`,
         {
           method: "DELETE",
         }
@@ -60,7 +60,7 @@ export default function WaitingScreen({ navigation, route }) {
       if (!email) return;
 
       const res = await fetch(
-        `http://192.168.1.43:8000/api/get_suspension_reason/${email}/`
+        `http://192.168.1.28:8000/api/get_suspension_reason/${email}/`
       );
 
       let data = {};
@@ -88,7 +88,7 @@ export default function WaitingScreen({ navigation, route }) {
       if (!email) return;
 
       const res = await fetch(
-        `http://192.168.1.43:8000/api/check-owner-status/${email}/`
+        `http://192.168.1.28:8000/api/check-owner-status/${email}/`
       );
 
       let data = {};

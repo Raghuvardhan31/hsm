@@ -36,7 +36,7 @@
 //     setLoading(true);
 //     try {
 //       const res = await fetch(
-//         `http://192.168.1.43:8000/api/tenantdetails/${encodeURIComponent(email)}/`
+//         `http://192.168.1.28:8000/api/tenantdetails/${encodeURIComponent(email)}/`
 //       );
 //       const text = await res.text();
 

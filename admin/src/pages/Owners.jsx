@@ -65,7 +65,7 @@ function Owners() {
       setLoading(true);
       setError("");
 
-      const response = await fetch("http://192.168.1.43:8000/api/owner-admin/");
+      const response = await fetch("http://192.168.1.28:8000/api/owner-admin/");
       const result = await response.json();
 
       if (response.ok && result?.data) {
@@ -99,7 +99,7 @@ function Owners() {
 
     try {
       const response = await fetch(
-        `http://192.168.1.43:8000/api/owner-status/${encodeURIComponent(cleanEmail)}/`,
+        `http://192.168.1.28:8000/api/owner-status/${encodeURIComponent(cleanEmail)}/`,
         {
           method: "PATCH",
           headers: {
@@ -137,7 +137,7 @@ function Owners() {
 
   const saveSuspendReason = async (email, reason) => {
     try {
-      const response = await fetch("http://192.168.1.43:8000/api/suspension_reason/", {
+      const response = await fetch("http://192.168.1.28:8000/api/suspension_reason/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -166,7 +166,7 @@ function Owners() {
   const fetchSuspensionReason = async (email) => {
     try {
       const response = await fetch(
-        `http://192.168.1.43:8000/api/get_suspension_reason/${encodeURIComponent(email)}/`
+        `http://192.168.1.28:8000/api/get_suspension_reason/${encodeURIComponent(email)}/`
       );
 
       const result = await response.json();

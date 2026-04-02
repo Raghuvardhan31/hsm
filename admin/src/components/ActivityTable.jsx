@@ -34,7 +34,7 @@ function ActivityTable() {
       setLoading(true);
       setError("");
 
-      const response = await fetch("http://192.168.1.43:8000/api/owner-admin/");
+      const response = await fetch("http://192.168.1.28:8000/api/owner-admin/");
       const result = await response.json();
 
       if (response.ok && result?.data) {
@@ -102,7 +102,7 @@ function ActivityTable() {
         >
           <FaEye style={{ color: "#4f46e5" }} />
           <label htmlFor="showRows" style={{ fontWeight: "500" }}>
-            Show
+            
           </label>
           <select
             id="showRows"
