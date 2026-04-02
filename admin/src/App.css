@@ -240,11 +240,143 @@ td {
   position: relative;
 }
 
-.bellIcon {
-  font-size: 18px;
+.bellContainer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
+}
+
+.bellIcon {
+  font-size: 20px;
+  color: #6b7280;
+  transition: color 0.2s;
+}
+
+.bellIcon:hover {
   color: #6c3bff;
 }
+
+.notificationBadge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background-color: #ef4444;
+  color: white;
+  font-size: 10px;
+  font-weight: bold;
+  height: 16px;
+  min-width: 16px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  border: 2px solid white;
+}
+
+.notificationDropdown {
+  position: absolute;
+  top: 45px;
+  right: 0;
+  width: 300px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  border: 1px solid #eee;
+  z-index: 1100;
+  overflow: hidden;
+}
+
+.notificationHeader {
+  padding: 12px 15px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.notificationHeader h4 {
+  margin: 0;
+  font-size: 14px;
+  color: #374151;
+}
+
+.clearNotifications {
+  font-size: 12px;
+  color: #6c3bff;
+  cursor: pointer;
+}
+
+.notificationList {
+  max-height: 350px;
+  overflow-y: auto;
+}
+
+.notificationItem {
+  padding: 12px 15px;
+  border-bottom: 1px solid #f9fafb;
+  transition: background 0.2s;
+  cursor: pointer;
+}
+
+.notificationItem:hover {
+  background-color: #f3f4f6;
+}
+
+.notificationItem:last-child {
+  border-bottom: none;
+}
+
+.notificationText {
+  margin: 0;
+  font-size: 13px;
+  color: #4b5563;
+  line-height: 1.4;
+}
+
+.notificationTime {
+  display: block;
+  font-size: 11px;
+  color: #9ca3af;
+  margin-top: 4px;
+}
+
+.emptyNotifications {
+  padding: 30px 15px;
+  text-align: center;
+  color: #9ca3af;
+  font-size: 13px;
+}
+
+.toastNotification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: #1f2937;
+  color: white;
+  padding: 12px 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
 
 .adminProfile {
   display: flex;

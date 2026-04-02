@@ -5,6 +5,9 @@ from django.db import transaction
 from django.core.files.storage import default_storage
 from django.conf import settings
 import json
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+from django.utils import timezone
 
 from .models import (
     Owners,
@@ -230,6 +233,21 @@ def register_owner(request):
  
     owner = owner_serializer.save(status='pending')
  
+    # 🔔 WEBSOCKET: Notify admin panel in real-time
+    try:
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            "admin_notifications",
+            {
+                "type": "send_notification",
+                "name": owner.name,
+                "message": f"new {owner.name} registered",
+                "time": timezone.now().strftime("%d %b %Y, %I:%M %p"),
+            }
+        )
+    except Exception as e:
+        print("WebSocket notification error:", e)
+
     # 2️⃣ FACILITIES
 
     FACILITY_FIELDS = [
