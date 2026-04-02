@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
+import { useLocation } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 import OwnerDetailsModal from "../components/OwnerDetailsModal";
@@ -10,10 +11,28 @@ function Properties({ onLogout }) {
   const [selectedEmail, setSelectedEmail] = useState(null);
   const [activeFilter, setActiveFilter] = useState("All");
   const [selectedImage, setSelectedImage] = useState(null);
+  const [highlightEmail, setHighlightEmail] = useState(null);
+  const highlightRef = useRef(null);
+  const location = useLocation();
  
   useEffect(() => {
     fetchBuildings();
   }, []);
+
+  // Read highlightEmail from search navigation
+  useEffect(() => {
+    if (location.state?.highlightEmail) {
+      setHighlightEmail(location.state.highlightEmail);
+      setTimeout(() => setHighlightEmail(null), 3000);
+    }
+  }, [location.state]);
+
+  // Auto-scroll to highlighted card
+  useEffect(() => {
+    if (highlightEmail && highlightRef.current) {
+      highlightRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [highlightEmail, properties]);
  
   const fetchBuildings = async () => {
     try {
@@ -120,11 +139,27 @@ function Properties({ onLogout }) {
  
           {!loading && !error && filteredProperties.length > 0 && (
             <div className="properties-grid">
-              {filteredProperties.map((property) => (
+              {filteredProperties.map((property) => {
+                const isHighlighted =
+                  highlightEmail &&
+                  property.email?.toLowerCase() === highlightEmail.toLowerCase();
+                return (
                 <div
                   key={property.id}
+                  ref={isHighlighted ? highlightRef : null}
                   className="property-card"
-                  style={{ overflow: "hidden" }}
+                  style={{
+                    overflow: "hidden",
+                    ...(isHighlighted
+                      ? {
+                          outline: "2px solid #7c3aed",
+                          boxShadow: "0 0 0 4px rgba(124,58,237,0.2), 0 8px 30px rgba(124,58,237,0.25)",
+                          animation: "searchHighlight 0.6s ease",
+                          transform: "translateY(-4px)",
+                          transition: "transform 0.3s ease, box-shadow 0.3s ease",
+                        }
+                      : {}),
+                  }}
                 >
                   <div
                     className="property-header"
@@ -203,7 +238,8 @@ function Properties({ onLogout }) {
                     </div>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
  

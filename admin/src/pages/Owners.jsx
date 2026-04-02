@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { FaEye, FaCheck, FaUserSlash, FaCommentDots } from "react-icons/fa";
 import Sidebar from "../components/Sidebar";
@@ -18,6 +18,8 @@ function Owners() {
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const [showReasonViewModal, setShowReasonViewModal] = useState(false);
   const [reasonData, setReasonData] = useState({ email: "", reason: "" });
+  const [highlightEmail, setHighlightEmail] = useState(null);
+  const highlightRef = useRef(null);
 
   const predefinedReasons = [
     "Some required documents are missing. Complete your submission.",
@@ -33,10 +35,22 @@ function Owners() {
   }, []);
 
   useEffect(() => {
-    if (location.state && location.state.filter) {
-      setFilter(location.state.filter);
+    if (location.state) {
+      if (location.state.filter) setFilter(location.state.filter);
+      if (location.state.highlightEmail) {
+        setHighlightEmail(location.state.highlightEmail);
+        // Clear highlight after 3 seconds
+        setTimeout(() => setHighlightEmail(null), 3000);
+      }
     }
   }, [location.state]);
+
+  // Auto-scroll to highlighted row once owners are loaded
+  useEffect(() => {
+    if (highlightEmail && highlightRef.current) {
+      highlightRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [highlightEmail, owners]);
 
   const formatDateTime = (dateString) => {
     if (!dateString) return "N/A";
@@ -308,94 +322,114 @@ function Owners() {
 
               <tbody>
                 {filteredOwners.length > 0 ? (
-                  filteredOwners.map((owner) => (
-                    <tr key={owner.id}>
-                      <td style={tdStyle}>
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "10px",
-                          }}
-                        >
-                          <div style={avatarStyle}>
-                            {owner.name
-                              ?.split(" ")
-                              .map((n) => n[0])
-                              .join("")
-                              .toUpperCase()}
-                          </div>
-                          <span>{owner.name}</span>
-                        </div>
-                      </td>
-
-                      <td style={tdStyle}>{owner.phone}</td>
-                      <td style={tdStyle}>{owner.email}</td>
-                      <td style={tdStyle}>{owner.property}</td>
-
-                      <td style={tdStyle}>
-                        <span style={getStatusBadgeStyle(owner.status)}>
-                          {owner.status}
-                        </span>
-                      </td>
-
-                      <td style={tdStyle}>{owner.date_time}</td>
-
-                      <td style={{ ...tdStyle, textAlign: "right" }}>
-                        <div
-                          style={{
-                            display: "flex",
-                            gap: "8px",
-                            justifyContent: "flex-end",
-                            flexWrap: "wrap",
-                          }}
-                        >
-                          {owner.status.toLowerCase() !== "active" && (
-                            <button
-                              style={approveBtn}
-                              title="Approve"
-                              onClick={async () => {
-                                const ok = await updateOwnerStatus(owner.email, "active");
-                                if (ok) {
-                                  console.log(`Email: ${owner.email}\nStatus: active`);
-                                }
-                              }}
-                            >
-                              <FaCheck size={16} />
-                            </button>
-                          )}
-
-                          {owner.status.toLowerCase() !== "suspend" && (
-                            <button
-                              style={suspendBtn}
-                              title="Suspend"
-                              onClick={() => handleSuspendClick(owner)}
-                            >
-                              <FaUserSlash size={16} />
-                            </button>
-                          )}
-
-                          {owner.status.toLowerCase() === "suspend" && (
-                            <button
-                              style={reasonBtn}
-                              title="View Suspension Reason"
-                              onClick={() => fetchSuspensionReason(owner.email)}
-                            >
-                              <FaCommentDots size={16} />
-                            </button>
-                          )}
-
-                          <button
-                            style={viewBtn}
-                            onClick={() => setSelectedEmail(owner.email)}
-                            title="View Details"
+                  filteredOwners.map((owner) => {
+                    const isHighlighted =
+                      highlightEmail &&
+                      owner.email.toLowerCase() === highlightEmail.toLowerCase();
+                    return (
+                      <tr
+                        key={owner.id}
+                        ref={isHighlighted ? highlightRef : null}
+                        style={
+                          isHighlighted
+                            ? {
+                                background: "linear-gradient(90deg, #f5f3ff, #ede9fe)",
+                                boxShadow: "0 0 0 2px #7c3aed inset",
+                                animation: "searchHighlight 0.6s ease",
+                                transition: "background 1s ease, box-shadow 1s ease",
+                              }
+                            : {}
+                        }
+                      >
+                        <td style={tdStyle}>
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "10px",
+                            }}
                           >
-                            <FaEye size={16} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
+                            <div style={avatarStyle}>
+                              {owner.name
+                                ?.split(" ")
+                                .map((n) => n[0])
+                                .join("")
+                                .toUpperCase()}
+                            </div>
+                            <span style={{ fontWeight: isHighlighted ? "700" : "400" }}>
+                              {owner.name}
+                            </span>
+                          </div>
+                        </td>
+
+                        <td style={tdStyle}>{owner.phone}</td>
+                        <td style={tdStyle}>{owner.email}</td>
+                        <td style={tdStyle}>{owner.property}</td>
+
+                        <td style={tdStyle}>
+                          <span style={getStatusBadgeStyle(owner.status)}>
+                            {owner.status}
+                          </span>
+                        </td>
+
+                        <td style={tdStyle}>{owner.date_time}</td>
+
+                        <td style={{ ...tdStyle, textAlign: "right" }}>
+                          <div
+                            style={{
+                              display: "flex",
+                              gap: "8px",
+                              justifyContent: "flex-end",
+                              flexWrap: "wrap",
+                            }}
+                          >
+                            {owner.status.toLowerCase() !== "active" && (
+                              <button
+                                style={approveBtn}
+                                title="Approve"
+                                onClick={async () => {
+                                  const ok = await updateOwnerStatus(owner.email, "active");
+                                  if (ok) {
+                                    console.log(`Email: ${owner.email}\nStatus: active`);
+                                  }
+                                }}
+                              >
+                                <FaCheck size={16} />
+                              </button>
+                            )}
+
+                            {owner.status.toLowerCase() !== "suspend" && (
+                              <button
+                                style={suspendBtn}
+                                title="Suspend"
+                                onClick={() => handleSuspendClick(owner)}
+                              >
+                                <FaUserSlash size={16} />
+                              </button>
+                            )}
+
+                            {owner.status.toLowerCase() === "suspend" && (
+                              <button
+                                style={reasonBtn}
+                                title="View Suspension Reason"
+                                onClick={() => fetchSuspensionReason(owner.email)}
+                              >
+                                <FaCommentDots size={16} />
+                              </button>
+                            )}
+
+                            <button
+                              style={viewBtn}
+                              onClick={() => setSelectedEmail(owner.email)}
+                              title="View Details"
+                            >
+                              <FaEye size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
                 ) : (
                   <tr>
                     <td colSpan="7" style={{ textAlign: "center", padding: "20px" }}>
