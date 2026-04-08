@@ -11,7 +11,7 @@ class NotificationConsumer(AsyncWebsocketConsumer):
             "admin_notifications",
             self.channel_name
         )
-        await self.accept()
+        await self.accept()     
         print(f"[WS] ✅ Connected & joined group 'admin_notifications': {self.channel_name}")
         
         # Send a confirmation message to the connected client
